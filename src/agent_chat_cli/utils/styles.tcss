@@ -1,0 +1,88 @@
+MarkdownH1,
+MarkdownH2,
+MarkdownH3,
+MarkdownH4,
+MarkdownH5,
+MarkdownH6 {
+    content-align: left top;
+    text-align: left;
+    margin-top: 1;
+}
+
+Screen {
+    background: transparent;
+}
+
+Spacer {
+    height: 1;
+}
+
+Flex {
+    layout: horizontal;
+    width: 100%;
+    height: auto;
+}
+
+#container {
+    layout: vertical;
+    padding-top: 1;
+    padding-left: 2;
+    background: transparent;
+}
+
+Header {
+    height: auto;
+    margin-bottom: 1;
+}
+
+ChatHistory {
+    height: auto;
+}
+
+ThinkingIndicator {
+    height: auto;
+    margin-bottom: 1;
+}
+
+BalloonSpinner {
+    width: auto;
+    height: 1;
+    margin-right: 1;
+}
+
+UserInput {
+    height: auto;
+    padding-bottom: 1;
+}
+
+SystemMessage, UserMessage, AgentMessage, ToolMessage {
+    height: auto;
+    margin-bottom: 1;
+}
+
+Markdown {
+    height: auto;
+    margin: 0;
+    padding: 0;
+    margin-bottom: -1;
+}
+
+Caret {
+    height: 1;
+    width: auto;
+    margin-right: 1;
+}
+
+Input {
+    height: 1;
+    width: 1fr;
+    border: none;
+    background: transparent;
+    color: white;
+    padding-left: 0;
+    margin-left: 0;
+}
+
+.tool-message {
+    padding-left: 2;
+}

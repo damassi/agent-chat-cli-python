@@ -1,0 +1,32 @@
+[project]
+name = "agent_chat_cli"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "asyncio>=4.0.0",
+    "claude-agent-sdk>=0.1.10",
+    "mypy>=1.19.0",
+    "pydantic>=2.12.5",
+    "python-dotenv>=1.2.1",
+    "pyyaml>=6.0.3",
+    "rich>=14.2.0",
+    "textual[syntax]>=6.7.0",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.0",
+    "pre-commit>=4.3.0",
+    "ruff>=0.14.7",
+    "textual-dev>=1.8.0",
+    "types-pyyaml>=6.0.12.20250915",
+]
+
+[project.scripts]
+chat = "agent_chat_cli.app:main"
+dev = "textual_dev.cli:run"
+
+[tool.uv]
+package = true

@@ -1,0 +1,57 @@
+# Agent Chat CLI Configuration
+
+# System prompt loaded from file
+system_prompt: system.md
+
+# Model to use (e.g., sonnet, opus, haiku)
+model: sonnet
+
+# Enable streaming responses
+include_partial_messages: true
+
+# Named agents with custom configurations
+# agents:
+#   sample_agent:
+#     description: "Example agent for demonstration"
+#     prompt: "You are a helpful assistant named Foo."
+#     mcp_servers:
+#       - chrome
+#       - github
+#     disallowed_tools: []
+
+# MCP server configurations
+mcp_servers:
+  chrome:
+    description: "Browser automation and debugging capabilities for AI agents"
+    command: "bunx"
+    args:
+      - "chrome-devtools-mcp@latest"
+    disallowed_tools: []
+    enabled: true
+
+  github:
+    description: "Search remote code, PRs, issues; discover documentation and deployment guides"
+    prompt: "github.md"
+    command: "bunx"
+    args:
+      - "mcp-remote@0.1.29"
+      - "https://api.githubcopilot.com/mcp/readonly"
+      - "--header"
+      - "Authorization: Bearer ${GITHUB_ACCESS_TOKEN}"
+    disallowed_tools: []
+    enabled: true
+
+  notion:
+    description: "Access workspace documentation, wikis, OKRs, and onboarding guides with hierarchical navigation"
+    command: "bunx"
+    args:
+      - "mcp-remote@0.1.29"
+      - "https://mcp.notion.com/mcp"
+    disallowed_tools: []
+    enabled: false
+
+# Global tool restrictions
+disallowed_tools: []
+
+# Permission mode for tool execution
+permission_mode: "bypassPermissions"
