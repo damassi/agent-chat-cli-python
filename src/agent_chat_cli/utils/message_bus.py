@@ -2,6 +2,7 @@ import asyncio
 from typing import TYPE_CHECKING
 
 from textual.widgets import Input, Markdown
+from textual.containers import VerticalScroll
 
 from agent_chat_cli.components.chat_history import ChatHistory, MessagePosted
 from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
@@ -35,7 +36,7 @@ class MessageBus:
     async def _scroll_to_bottom(self) -> None:
         """Scroll the container to the bottom after a slight pause."""
         await asyncio.sleep(0.1)
-        container = self.app.query_one("#container")
+        container = self.app.query_one(VerticalScroll)
         container.scroll_end(animate=False, immediate=True)
 
     async def _handle_stream_event(self, message: AgentMessage) -> None:

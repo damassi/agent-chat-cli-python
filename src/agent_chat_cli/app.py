@@ -33,7 +33,7 @@ class AgentChatCLIApp(App):
         )
 
     def compose(self) -> ComposeResult:
-        with VerticalScroll(id="container"):
+        with VerticalScroll():
             yield Header()
             yield ChatHistory()
             yield ThinkingIndicator()

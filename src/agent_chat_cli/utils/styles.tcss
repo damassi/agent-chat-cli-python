@@ -23,8 +23,7 @@ Flex {
     height: auto;
 }
 
-#container {
-    layout: vertical;
+VerticalScroll {
     padding-top: 1;
     padding-left: 2;
     background: transparent;
