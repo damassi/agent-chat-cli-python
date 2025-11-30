@@ -19,3 +19,11 @@ This app uses [uv](https://github.com/astral-sh/uv) for package management so fi
 - `uv run chat`
 
 Additional MCP servers are configured in `agent-chat-cli.config.yaml` and prompts added within the `prompts` folder.
+
+## Development
+
+- Install pre-commit hooks
+  - `uv run pre-commit install`
+- Typechecking is via [MyPy](https://github.com/python/mypy):
+  - `uv run mypy src`
+- Linting and formatting is via [Ruff](https://docs.astral.sh/ruff/)

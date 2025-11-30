@@ -57,34 +57,37 @@ def load_config(
         raw_config = yaml.safe_load(f)
 
     base_system_prompt = ""
-    if "system_prompt" in raw_config:
+
+    if raw_config.get("system_prompt"):
         base_system_prompt = load_prompt(raw_config["system_prompt"])
 
-    if "agents" in raw_config:
+    if raw_config.get("agents"):
         for agent_config in raw_config["agents"].values():
-            if "prompt" in agent_config:
+            if agent_config.get("prompt"):
                 agent_config["prompt"] = load_prompt(agent_config["prompt"])
 
     mcp_server_prompts = []
-    if "mcp_servers" in raw_config:
+
+    if raw_config.get("mcp_servers"):
         enabled_servers = {
             name: config
             for name, config in raw_config["mcp_servers"].items()
             if config.get("enabled", True)
         }
+
         raw_config["mcp_servers"] = enabled_servers
 
         for server_config in enabled_servers.values():
-            if "prompt" in server_config and server_config["prompt"]:
+            if server_config.get("prompt"):
                 loaded_prompt = load_prompt(server_config["prompt"])
                 server_config["prompt"] = loaded_prompt
                 mcp_server_prompts.append(loaded_prompt)
 
-            if "env" in server_config:
+            if server_config.get("env"):
                 for key, value in server_config["env"].items():
                     server_config["env"][key] = os.path.expandvars(value)
 
-            if "args" in server_config:
+            if server_config.get("args"):
                 server_config["args"] = [
                     os.path.expandvars(arg) for arg in server_config["args"]
                 ]
