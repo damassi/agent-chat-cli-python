@@ -9,6 +9,9 @@ model: haiku
 # Enable streaming responses
 include_partial_messages: true
 
+# Enable dynamic MCP server inference
+mcp_server_inference: true
+
 # Named agents with custom configurations
 # agents:
 #   sample_agent:

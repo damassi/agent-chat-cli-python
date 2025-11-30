@@ -8,10 +8,10 @@ from agent_chat_cli.components.header import Header
 from agent_chat_cli.components.chat_history import ChatHistory, MessagePosted
 from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
 from agent_chat_cli.components.user_input import UserInput
-from agent_chat_cli.utils import AgentLoop
-from agent_chat_cli.utils.message_bus import MessageBus
+from agent_chat_cli.system.agent_loop import AgentLoop
+from agent_chat_cli.system.message_bus import MessageBus
+from agent_chat_cli.system.actions import Actions
 from agent_chat_cli.utils.logger import setup_logging
-from agent_chat_cli.utils.actions import Actions
 
 from dotenv import load_dotenv
 
@@ -20,7 +20,7 @@ setup_logging()
 
 
 class AgentChatCLIApp(App):
-    CSS_PATH = "utils/styles.tcss"
+    CSS_PATH = "system/styles.tcss"
 
     BINDINGS = [
         Binding("ctrl+c", "quit", "Quit", show=False, priority=True),

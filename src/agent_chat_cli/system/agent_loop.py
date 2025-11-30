@@ -13,8 +13,14 @@ from claude_agent_sdk.types import (
     ToolUseBlock,
 )
 
-from agent_chat_cli.utils.config import load_config
+from agent_chat_cli.utils.config import (
+    load_config,
+    get_available_servers,
+    get_sdk_config,
+)
 from agent_chat_cli.utils.enums import AgentMessageType, ContentType, ControlCommand
+from agent_chat_cli.system.mcp_inference import infer_mcp_servers
+from agent_chat_cli.utils.logger import log_json
 
 
 @dataclass
@@ -31,12 +37,10 @@ class AgentLoop:
     ) -> None:
         self.config = load_config()
         self.session_id = session_id
+        self.available_servers = get_available_servers()
+        self.inferred_servers: set[str] = set()
 
-        config_dict = self.config.model_dump()
-        if session_id:
-            config_dict["resume"] = session_id
-
-        self.client = ClaudeSDKClient(options=ClaudeAgentOptions(**config_dict))
+        self.client: ClaudeSDKClient
 
         self.on_message = on_message
         self.query_queue: asyncio.Queue[str | ControlCommand] = asyncio.Queue()
@@ -44,8 +48,27 @@ class AgentLoop:
         self._running = False
         self.interrupting = False
 
-    async def start(self) -> None:
+    async def _initialize_client(self, mcp_servers: dict) -> None:
+        sdk_config = get_sdk_config(self.config)
+        sdk_config["mcp_servers"] = mcp_servers
+
+        if self.session_id:
+            sdk_config["resume"] = self.session_id
+
+        self.client = ClaudeSDKClient(options=ClaudeAgentOptions(**sdk_config))
+
         await self.client.connect()
+
+    async def start(self) -> None:
+        if self.config.mcp_server_inference:
+            await self._initialize_client(mcp_servers={})
+        else:
+            mcp_servers = {
+                name: config.model_dump()
+                for name, config in self.available_servers.items()
+            }
+
+            await self._initialize_client(mcp_servers=mcp_servers)
 
         self._running = True
 
@@ -54,11 +77,53 @@ class AgentLoop:
 
             if isinstance(user_input, ControlCommand):
                 if user_input == ControlCommand.NEW_CONVERSATION:
+                    self.inferred_servers.clear()
+
                     await self.client.disconnect()
-                    await self.client.connect()
+
+                    if self.config.mcp_server_inference:
+                        await self._initialize_client(mcp_servers={})
+                    else:
+                        mcp_servers = {
+                            name: config.model_dump()
+                            for name, config in self.available_servers.items()
+                        }
+
+                        await self._initialize_client(mcp_servers=mcp_servers)
                 continue
 
+            if self.config.mcp_server_inference:
+                inference_result = await infer_mcp_servers(
+                    user_message=user_input,
+                    available_servers=self.available_servers,
+                    inferred_servers=self.inferred_servers,
+                    session_id=self.session_id,
+                )
+
+                if inference_result["new_servers"]:
+                    server_list = ", ".join(inference_result["new_servers"])
+
+                    await self.on_message(
+                        AgentMessage(
+                            type=AgentMessageType.SYSTEM,
+                            data=f"Connecting to {server_list}...",
+                        )
+                    )
+
+                    await asyncio.sleep(0.1)
+
+                    await self.client.disconnect()
+
+                    mcp_servers = {
+                        name: config.model_dump()
+                        for name, config in inference_result["selected_servers"].items()
+                    }
+
+                    await self._initialize_client(mcp_servers=mcp_servers)
+
             self.interrupting = False
+
+            # Send query
             await self.client.query(user_input)
 
             async for message in self.client.receive_response():
@@ -71,6 +136,8 @@ class AgentLoop:
 
     async def _handle_message(self, message: Any) -> None:
         if isinstance(message, SystemMessage):
+            log_json(message.data)
+
             if message.subtype == AgentMessageType.INIT.value and message.data.get(
                 "session_id"
             ):

@@ -30,7 +30,7 @@ make chat
 make dev
 ```
 
-Additional MCP servers are configured in `agent-chat-cli.config.yaml` and prompts added within the `prompts` folder.
+Additional MCP servers are configured in `agent-chat-cli.config.yaml` and prompts added within the `prompts` folder. By default, MCP servers are loaded dynamically via inference; set `mcp_server_inference: false` to load all servers at startup.
 
 ## Development
 

@@ -1,4 +1,4 @@
-from agent_chat_cli.utils.agent_loop import AgentLoop
+from agent_chat_cli.system.agent_loop import AgentLoop
 from agent_chat_cli.utils.enums import ControlCommand
 from agent_chat_cli.components.chat_history import ChatHistory
 from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
