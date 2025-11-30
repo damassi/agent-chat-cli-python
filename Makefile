@@ -1,7 +1,7 @@
 .PHONY: chat dev console
 
 install:
-	uv sync && uv run pre-commit install
+	uv sync && uv run pre-commit install && cp .env.example .env && echo "Please edit the .env file with your API keys."
 
 chat:
 	uv run chat
