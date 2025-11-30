@@ -10,7 +10,8 @@ from agent_chat_cli.components.messages import (
     AgentMessage as AgentMessageWidget,
     ToolMessage,
 )
-from agent_chat_cli.utils.agent_loop import AgentMessage, MessageType, ContentType
+from agent_chat_cli.utils.agent_loop import AgentMessage
+from agent_chat_cli.utils.enums import AgentMessageType, ContentType
 
 if TYPE_CHECKING:
     from textual.app import App
@@ -30,11 +31,11 @@ class MessageBus:
 
     async def handle_agent_message(self, message: AgentMessage) -> None:
         match message.type:
-            case MessageType.STREAM_EVENT:
+            case AgentMessageType.STREAM_EVENT:
                 await self._handle_stream_event(message)
-            case MessageType.ASSISTANT:
+            case AgentMessageType.ASSISTANT:
                 await self._handle_assistant(message)
-            case MessageType.RESULT:
+            case AgentMessageType.RESULT:
                 await self._handle_result()
 
     async def _handle_stream_event(self, message: AgentMessage) -> None:

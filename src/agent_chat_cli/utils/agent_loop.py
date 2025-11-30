@@ -1,5 +1,4 @@
 import asyncio
-from enum import Enum
 from typing import Callable, Awaitable, Any
 from dataclasses import dataclass
 
@@ -10,24 +9,12 @@ from claude_agent_sdk import (
 from claude_agent_sdk.types import AssistantMessage, TextBlock, ToolUseBlock
 
 from agent_chat_cli.utils.config import load_config
-
-
-class MessageType(Enum):
-    ASSISTANT = "assistant"
-    INIT = "init"
-    RESULT = "result"
-    STREAM_EVENT = "stream_event"
-    SYSTEM = "system"
-
-
-class ContentType(Enum):
-    TEXT = "text"
-    TOOL_USE = "tool_use"
+from agent_chat_cli.utils.enums import AgentMessageType, ContentType
 
 
 @dataclass
 class AgentMessage:
-    type: MessageType
+    type: AgentMessageType
     data: Any
 
 
@@ -59,22 +46,22 @@ class AgentLoop:
             async for message in self.client.receive_response():
                 await self._handle_message(message)
 
-            await self.on_message(AgentMessage(type=MessageType.RESULT, data=None))
+            await self.on_message(AgentMessage(type=AgentMessageType.RESULT, data=None))
 
     async def _handle_message(self, message: Any) -> None:
         if hasattr(message, "event"):
             event = message.event  # type: ignore[attr-defined]
 
-            if event.get("type") == "content_block_delta":
+            if event.get("type") == ContentType.CONTENT_BLOCK_DELTA.value:
                 delta = event.get("delta", {})
 
-                if delta.get("type") == "text_delta":
+                if delta.get("type") == ContentType.TEXT_DELTA.value:
                     text_chunk = delta.get("text", "")
 
                     if text_chunk:
                         await self.on_message(
                             AgentMessage(
-                                type=MessageType.STREAM_EVENT,
+                                type=AgentMessageType.STREAM_EVENT,
                                 data={"text": text_chunk},
                             )
                         )
@@ -99,7 +86,7 @@ class AgentLoop:
 
             await self.on_message(
                 AgentMessage(
-                    type=MessageType.ASSISTANT,
+                    type=AgentMessageType.ASSISTANT,
                     data={"content": content},
                 )
             )
