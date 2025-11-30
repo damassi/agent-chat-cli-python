@@ -14,7 +14,7 @@ from claude_agent_sdk.types import (
 )
 
 from agent_chat_cli.utils.config import load_config
-from agent_chat_cli.utils.enums import AgentMessageType, ContentType
+from agent_chat_cli.utils.enums import AgentMessageType, ContentType, ControlCommand
 
 
 @dataclass
@@ -39,9 +39,10 @@ class AgentLoop:
         self.client = ClaudeSDKClient(options=ClaudeAgentOptions(**config_dict))
 
         self.on_message = on_message
-        self.query_queue: asyncio.Queue[str] = asyncio.Queue()
+        self.query_queue: asyncio.Queue[str | ControlCommand] = asyncio.Queue()
 
         self._running = False
+        self.interrupting = False
 
     async def start(self) -> None:
         await self.client.connect()
@@ -50,9 +51,20 @@ class AgentLoop:
 
         while self._running:
             user_input = await self.query_queue.get()
+
+            if isinstance(user_input, ControlCommand):
+                if user_input == ControlCommand.NEW_CONVERSATION:
+                    await self.client.disconnect()
+                    await self.client.connect()
+                continue
+
+            self.interrupting = False
             await self.client.query(user_input)
 
             async for message in self.client.receive_response():
+                if self.interrupting:
+                    continue
+
                 await self._handle_message(message)
 
             await self.on_message(AgentMessage(type=AgentMessageType.RESULT, data=None))
@@ -105,10 +117,3 @@ class AgentLoop:
                     data={"content": content},
                 )
             )
-
-    async def query(self, user_input: str) -> None:
-        await self.query_queue.put(user_input)
-
-    async def stop(self) -> None:
-        self._running = False
-        await self.client.disconnect()

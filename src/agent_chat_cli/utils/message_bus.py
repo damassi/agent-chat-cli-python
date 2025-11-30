@@ -28,8 +28,10 @@ class MessageBus:
         match message.type:
             case AgentMessageType.STREAM_EVENT:
                 await self._handle_stream_event(message)
+
             case AgentMessageType.ASSISTANT:
                 await self._handle_assistant(message)
+
             case AgentMessageType.RESULT:
                 await self._handle_result()
 
