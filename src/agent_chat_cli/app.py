@@ -1,4 +1,5 @@
 import asyncio
+
 from textual.app import App, ComposeResult
 from textual.containers import VerticalScroll
 from textual.binding import Binding
@@ -9,10 +10,12 @@ from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
 from agent_chat_cli.components.user_input import UserInput
 from agent_chat_cli.utils import AgentLoop
 from agent_chat_cli.utils.message_bus import MessageBus
+from agent_chat_cli.utils.logger import setup_logging
 
 from dotenv import load_dotenv
 
 load_dotenv()
+setup_logging()
 
 
 class AgentChatCLIApp(App):

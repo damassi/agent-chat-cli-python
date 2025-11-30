@@ -23,12 +23,6 @@ class MessageBus:
         self.current_agent_message: AgentMessageWidget | None = None
         self.current_response_text = ""
 
-    async def _scroll_to_bottom(self) -> None:
-        """Scroll the container to the bottom after a slight pause."""
-        await asyncio.sleep(0.1)
-        container = self.app.query_one("#container")
-        container.scroll_end(animate=False, immediate=True)
-
     async def handle_agent_message(self, message: AgentMessage) -> None:
         match message.type:
             case AgentMessageType.STREAM_EVENT:
@@ -37,6 +31,12 @@ class MessageBus:
                 await self._handle_assistant(message)
             case AgentMessageType.RESULT:
                 await self._handle_result()
+
+    async def _scroll_to_bottom(self) -> None:
+        """Scroll the container to the bottom after a slight pause."""
+        await asyncio.sleep(0.1)
+        container = self.app.query_one("#container")
+        container.scroll_end(animate=False, immediate=True)
 
     async def _handle_stream_event(self, message: AgentMessage) -> None:
         text_chunk = message.data.get("text", "")

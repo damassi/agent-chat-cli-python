@@ -15,8 +15,8 @@ This tool is for those who wish for slightly more control over their MCP servers
 This app uses [uv](https://github.com/astral-sh/uv) for package management so first install that. Then:
 
 - `git clone https://github.com/damassi/agent-chat-cli-python.git`
-- `uv sync`
-- `uv run chat`
+- `make install`
+- `make chat`
 
 Additional MCP servers are configured in `agent-chat-cli.config.yaml` and prompts added within the `prompts` folder.
 
@@ -27,3 +27,19 @@ Additional MCP servers are configured in `agent-chat-cli.config.yaml` and prompt
 - Typechecking is via [MyPy](https://github.com/python/mypy):
   - `uv run mypy src`
 - Linting and formatting is via [Ruff](https://docs.astral.sh/ruff/)
+
+Textual has an integrated logging console which one can boot separately from the app to receive logs.
+
+In one terminal pane boot the console:
+
+```bash
+make console
+```
+
+> Note: this command intentionally filters out more verbose notifications. See the Makefile to configure.
+
+And then in a second, start the textual dev server:
+
+```bash
+make dev
+```
