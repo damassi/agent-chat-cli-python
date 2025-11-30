@@ -15,8 +15,8 @@ This tool is for those who wish for slightly more control over their MCP servers
 This app uses [uv](https://github.com/astral-sh/uv) for package management so first install that. Then:
 
 - `git clone https://github.com/damassi/agent-chat-cli-python.git`
-- `uv sync`
-- `uv run chat`
+- `make install`
+- `make chat`
 
 Additional MCP servers are configured in `agent-chat-cli.config.yaml` and prompts added within the `prompts` folder.
 
