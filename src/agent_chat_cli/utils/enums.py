@@ -14,3 +14,9 @@ class ContentType(Enum):
     TOOL_USE = "tool_use"
     CONTENT_BLOCK_DELTA = "content_block_delta"
     TEXT_DELTA = "text_delta"
+
+
+class ControlCommand(Enum):
+    NEW_CONVERSATION = "new_conversation"
+    EXIT = "exit"
+    CLEAR = "clear"
