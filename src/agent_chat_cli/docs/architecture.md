@@ -4,28 +4,6 @@
 
 Agent Chat CLI is a Python TUI application built with Textual that provides an interactive chat interface for Claude AI with MCP (Model Context Protocol) server support.
 
-## Directory Structure
-
-```
-src/agent_chat_cli/
-├── app.py                      # Main application entry point
-├── components/                 # UI components (Textual widgets)
-│   ├── chat_history.py        # Container for chat messages
-│   ├── messages.py            # Message widgets and UI Message type
-│   ├── user_input.py          # User input component
-│   ├── thinking_indicator.py # Loading indicator
-│   └── header.py              # App header with config info
-├── utils/                     # Business logic and utilities
-│   ├── agent_loop.py          # Claude SDK conversation loop
-│   ├── message_bus.py         # Routes messages between agent and UI
-│   ├── config.py              # Configuration loading and validation
-│   ├── enums.py               # All enum types
-│   ├── system_prompt.py       # System prompt assembly
-│   ├── format_tool_input.py   # Tool input formatting
-│   └── tool_info.py           # MCP tool name parsing
-└── utils/styles.tcss          # Textual CSS styles
-```
-
 ## Core Components
 
 ### App Layer (`app.py`)

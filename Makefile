@@ -1,4 +1,4 @@
-.PHONY: chat logs
+.PHONY: chat dev console
 
 install:
 	uv sync && uv run pre-commit install
@@ -6,5 +6,8 @@ install:
 chat:
 	uv run chat
 
-logs:
+console:
 	uv run textual console -x SYSTEM -x EVENT -x DEBUG -x INFO
+
+dev:
+	uv run textual run --dev -c chat

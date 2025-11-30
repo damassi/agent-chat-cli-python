@@ -4,7 +4,7 @@
 system_prompt: system.md
 
 # Model to use (e.g., sonnet, opus, haiku)
-model: sonnet
+model: haiku
 
 # Enable streaming responses
 include_partial_messages: true

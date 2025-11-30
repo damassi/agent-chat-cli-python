@@ -1,10 +1,8 @@
-import logging
 import asyncio
 
 from textual.app import App, ComposeResult
 from textual.containers import VerticalScroll
 from textual.binding import Binding
-from textual.logging import TextualHandler
 
 from agent_chat_cli.components.header import Header
 from agent_chat_cli.components.chat_history import ChatHistory, MessagePosted
@@ -12,15 +10,12 @@ from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
 from agent_chat_cli.components.user_input import UserInput
 from agent_chat_cli.utils import AgentLoop
 from agent_chat_cli.utils.message_bus import MessageBus
+from agent_chat_cli.utils.logger import setup_logging
 
 from dotenv import load_dotenv
 
 load_dotenv()
-
-logging.basicConfig(
-    level="NOTSET",
-    handlers=[TextualHandler()],
-)
+setup_logging()
 
 
 class AgentChatCLIApp(App):
@@ -45,7 +40,6 @@ class AgentChatCLIApp(App):
             yield UserInput(query=self.agent_loop.query)
 
     async def on_mount(self) -> None:
-        logging.debug("Starting agent loop...")
         asyncio.create_task(self.agent_loop.start())
 
     async def on_message_posted(self, event: MessagePosted) -> None:
