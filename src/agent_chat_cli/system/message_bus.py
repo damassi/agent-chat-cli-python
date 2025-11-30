@@ -9,9 +9,10 @@ from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
 from agent_chat_cli.components.user_input import UserInput
 from agent_chat_cli.components.messages import (
     AgentMessage as AgentMessageWidget,
+    Message,
     ToolMessage,
 )
-from agent_chat_cli.utils.agent_loop import AgentMessage
+from agent_chat_cli.system.agent_loop import AgentMessage
 from agent_chat_cli.utils.enums import AgentMessageType, ContentType
 
 if TYPE_CHECKING:
@@ -31,6 +32,9 @@ class MessageBus:
 
             case AgentMessageType.ASSISTANT:
                 await self._handle_assistant(message)
+
+            case AgentMessageType.SYSTEM:
+                await self._handle_system(message)
 
             case AgentMessageType.RESULT:
                 await self._handle_result()
@@ -85,6 +89,14 @@ class MessageBus:
                 chat_history.mount(tool_msg)
 
                 await self._scroll_to_bottom()
+
+    async def _handle_system(self, message: AgentMessage) -> None:
+        system_content = (
+            message.data if isinstance(message.data, str) else str(message.data)
+        )
+
+        self.app.post_message(MessagePosted(Message.system(system_content)))
+        await self._scroll_to_bottom()
 
     async def _handle_result(self) -> None:
         thinking_indicator = self.app.query_one(ThinkingIndicator)

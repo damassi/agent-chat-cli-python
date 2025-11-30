@@ -30,6 +30,7 @@ class AgentChatConfig(BaseModel):
     system_prompt: str
     model: str
     include_partial_messages: bool = True  # Enable streaming responses
+    mcp_server_inference: bool = True  # Enable dynamic MCP server inference
     agents: dict[str, AgentConfig] = Field(default_factory=dict)
     mcp_servers: dict[str, MCPServerConfig] = Field(default_factory=dict)
     disallowed_tools: list[str] = Field(default_factory=list)
@@ -97,3 +98,16 @@ def load_config(
     )
 
     return AgentChatConfig(**raw_config)
+
+
+def get_available_servers(
+    config_path: str | Path = "agent-chat-cli.config.yaml",
+) -> dict[str, MCPServerConfig]:
+    config = load_config(config_path)
+    return config.mcp_servers
+
+
+def get_sdk_config(config: AgentChatConfig) -> dict:
+    sdk_config = config.model_dump()
+    sdk_config.pop("mcp_server_inference", None)
+    return sdk_config

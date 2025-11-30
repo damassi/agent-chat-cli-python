@@ -16,24 +16,34 @@ Textual widgets responsible for UI rendering:
 - **UserInput**: Handles user text input and submission
 - **ThinkingIndicator**: Shows when agent is processing
 
-### Utils Layer
+### System Layer
 
-#### Agent Loop (`agent_loop.py`)
+#### Agent Loop (`system/agent_loop.py`)
 Manages the conversation loop with Claude SDK:
 - Maintains async queue for user queries
 - Handles streaming responses
 - Parses SDK messages into structured AgentMessage objects
 - Emits AgentMessageType events (STREAM_EVENT, ASSISTANT, RESULT)
 - Manages session persistence via session_id
+- Supports dynamic MCP server inference and loading
 
-#### Message Bus (`message_bus.py`)
+#### MCP Server Inference (`system/mcp_inference.py`)
+Intelligently determines which MCP servers are needed for each query:
+- Uses a persistent Haiku client for fast inference (~1-3s after initial boot)
+- Analyzes user queries to infer required servers
+- Maintains a cached set of inferred servers across conversation
+- Returns only newly needed servers to minimize reconnections
+- Can be disabled via `mcp_server_inference: false` config option
+
+#### Message Bus (`system/message_bus.py`)
 Routes agent messages to appropriate UI components:
 - Handles streaming text updates
 - Mounts tool use messages
 - Controls thinking indicator state
 - Manages scroll-to-bottom behavior
+- Displays system messages (e.g., MCP server connection notifications)
 
-#### Actions (`actions.py`)
+#### Actions (`system/actions.py`)
 Centralizes all user-initiated actions and controls:
 - **quit()**: Exits the application
 - **query(user_input)**: Sends user query to agent loop queue
@@ -46,14 +56,19 @@ Actions are triggered via:
 - Keybindings in app.py (ESC → action_interrupt, Ctrl+N → action_new)
 - Text commands in user_input.py ("exit", "clear")
 
-#### Config (`config.py`)
+### Utils Layer
+
+#### Config (`utils/config.py`)
 Loads and validates YAML configuration:
 - Filters disabled MCP servers
 - Loads prompts from files
 - Expands environment variables
 - Combines system prompt with MCP server prompts
+- Provides `get_sdk_config()` to filter app-specific config before passing to SDK
 
 ## Data Flow
+
+### Standard Query Flow (with MCP Inference enabled)
 
 ```
 User Input
@@ -64,7 +79,16 @@ MessagePosted event → ChatHistory (immediate UI update)
     ↓
 Actions.query(user_input) → AgentLoop.query_queue.put()
     ↓
-Claude SDK (streaming response)
+AgentLoop: MCP Server Inference (if enabled)
+    ↓
+infer_mcp_servers(user_message) → Haiku query
+    ↓
+If new servers needed:
+    - Post SYSTEM message ("Connecting to [servers]...")
+    - Disconnect client
+    - Reconnect with new servers (preserving session_id)
+    ↓
+Claude SDK (streaming response with connected MCP tools)
     ↓
 AgentLoop._handle_message
     ↓
@@ -73,7 +97,24 @@ AgentMessage (typed message) → MessageBus.handle_agent_message
 Match on AgentMessageType:
     - STREAM_EVENT → Update streaming message widget
     - ASSISTANT → Mount tool use widgets
+    - SYSTEM → Display system notification
     - RESULT → Reset thinking indicator
+```
+
+### Query Flow (with MCP Inference disabled)
+
+```
+User Input
+    ↓
+UserInput.on_input_submitted
+    ↓
+MessagePosted event → ChatHistory (immediate UI update)
+    ↓
+Actions.query(user_input) → AgentLoop.query_queue.put()
+    ↓
+Claude SDK (all servers pre-connected at startup)
+    ↓
+[Same as above from _handle_message onwards]
 ```
 
 ### Control Commands Flow
@@ -138,13 +179,37 @@ class Message:
 Configuration is loaded from `agent-chat-cli.config.yaml`:
 - **system_prompt**: Base system prompt (supports file paths)
 - **model**: Claude model to use
-- **include_partial_messages**: Enable streaming
+- **include_partial_messages**: Enable streaming responses (default: true)
+- **mcp_server_inference**: Enable dynamic MCP server inference (default: true)
+  - When `true`: App boots instantly without MCP servers, connects only when needed
+  - When `false`: All enabled MCP servers load at startup (traditional behavior)
 - **mcp_servers**: MCP server configurations (filtered by enabled flag)
 - **agents**: Named agent configurations
 - **disallowed_tools**: Tool filtering
 - **permission_mode**: Permission handling mode
 
 MCP server prompts are automatically appended to the system prompt.
+
+### MCP Server Inference
+
+When `mcp_server_inference: true` (default):
+
+1. **Fast Boot**: App starts without connecting to any MCP servers
+2. **Smart Detection**: Before each query, Haiku analyzes which servers are needed
+3. **Dynamic Loading**: Only connects to newly required servers
+4. **Session Preservation**: Maintains conversation history when reconnecting with new servers
+5. **Performance**: ~1-3s inference latency after initial boot (first query ~8-12s)
+
+Example config:
+```yaml
+mcp_server_inference: true  # or false to disable
+
+mcp_servers:
+  github:
+    description: "Search code, PRs, issues"
+    enabled: true
+    # ... rest of config
+```
 
 ## User Commands
 

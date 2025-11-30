@@ -9,7 +9,7 @@ from agent_chat_cli.components.flex import Flex
 from agent_chat_cli.components.chat_history import MessagePosted
 from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
 from agent_chat_cli.components.messages import Message
-from agent_chat_cli.utils.actions import Actions
+from agent_chat_cli.system.actions import Actions
 from agent_chat_cli.utils.enums import ControlCommand
 
 
