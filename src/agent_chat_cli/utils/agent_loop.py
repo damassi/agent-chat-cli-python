@@ -6,7 +6,12 @@ from claude_agent_sdk import (
     ClaudeAgentOptions,
     ClaudeSDKClient,
 )
-from claude_agent_sdk.types import AssistantMessage, TextBlock, ToolUseBlock
+from claude_agent_sdk.types import (
+    AssistantMessage,
+    SystemMessage,
+    TextBlock,
+    ToolUseBlock,
+)
 
 from agent_chat_cli.utils.config import load_config
 from agent_chat_cli.utils.enums import AgentMessageType, ContentType
@@ -22,12 +27,16 @@ class AgentLoop:
     def __init__(
         self,
         on_message: Callable[[AgentMessage], Awaitable[None]],
+        session_id: str | None = None,
     ) -> None:
         self.config = load_config()
+        self.session_id = session_id
 
-        self.client = ClaudeSDKClient(
-            options=ClaudeAgentOptions(**self.config.model_dump())
-        )
+        config_dict = self.config.model_dump()
+        if session_id:
+            config_dict["resume"] = session_id
+
+        self.client = ClaudeSDKClient(options=ClaudeAgentOptions(**config_dict))
 
         self.on_message = on_message
         self.query_queue: asyncio.Queue[str] = asyncio.Queue()
@@ -49,6 +58,12 @@ class AgentLoop:
             await self.on_message(AgentMessage(type=AgentMessageType.RESULT, data=None))
 
     async def _handle_message(self, message: Any) -> None:
+        if isinstance(message, SystemMessage):
+            if message.subtype == AgentMessageType.INIT.value and message.data.get(
+                "session_id"
+            ):
+                self.session_id = message.data["session_id"]
+
         if hasattr(message, "event"):
             event = message.event  # type: ignore[attr-defined]
 
