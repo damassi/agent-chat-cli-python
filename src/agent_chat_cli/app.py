@@ -32,13 +32,9 @@ class AgentChatCLIApp(App):
     def __init__(self) -> None:
         super().__init__()
 
-        self.message_bus = MessageBus(self)
-
-        self.agent_loop = AgentLoop(
-            on_message=self.message_bus.handle_agent_message,
-        )
-
-        self.actions = Actions(self)
+        self.message_bus = MessageBus(app=self)
+        self.actions = Actions(app=self)
+        self.agent_loop = AgentLoop(app=self)
         self.pending_tool_permission: dict | None = None
 
     def compose(self) -> ComposeResult:

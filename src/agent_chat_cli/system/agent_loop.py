@@ -1,5 +1,5 @@
 import asyncio
-from typing import Callable, Awaitable, Any
+from typing import Any, TYPE_CHECKING
 from dataclasses import dataclass
 
 from claude_agent_sdk import (
@@ -26,6 +26,9 @@ from agent_chat_cli.utils.enums import AgentMessageType, ContentType, ControlCom
 from agent_chat_cli.system.mcp_inference import infer_mcp_servers
 from agent_chat_cli.utils.logger import log_json
 
+if TYPE_CHECKING:
+    from agent_chat_cli.app import AgentChatCLIApp
+
 
 @dataclass
 class AgentMessage:
@@ -36,9 +39,10 @@ class AgentMessage:
 class AgentLoop:
     def __init__(
         self,
-        on_message: Callable[[AgentMessage], Awaitable[None]],
+        app: "AgentChatCLIApp",
         session_id: str | None = None,
     ) -> None:
+        self.app = app
         self.config = load_config()
         self.session_id = session_id
         self.available_servers = get_available_servers()
@@ -46,7 +50,6 @@ class AgentLoop:
 
         self.client: ClaudeSDKClient
 
-        self.on_message = on_message
         self.query_queue: asyncio.Queue[str | ControlCommand] = asyncio.Queue()
         self.permission_response_queue: asyncio.Queue[str] = asyncio.Queue()
         self.permission_lock = asyncio.Lock()
@@ -104,11 +107,8 @@ class AgentLoop:
                 if inference_result["new_servers"]:
                     server_list = ", ".join(inference_result["new_servers"])
 
-                    await self.on_message(
-                        AgentMessage(
-                            type=AgentMessageType.SYSTEM,
-                            data=f"Connecting to {server_list}...",
-                        )
+                    self.app.actions.post_system_message(
+                        f"Connecting to {server_list}..."
                     )
 
                     await asyncio.sleep(0.1)
@@ -136,7 +136,9 @@ class AgentLoop:
 
                 await self._handle_message(message)
 
-            await self.on_message(AgentMessage(type=AgentMessageType.RESULT, data=None))
+            await self.app.actions.handle_agent_message(
+                AgentMessage(type=AgentMessageType.RESULT, data=None)
+            )
 
     async def _initialize_client(self, mcp_servers: dict) -> None:
         sdk_config = get_sdk_config(self.config)
@@ -174,7 +176,7 @@ class AgentLoop:
                     text_chunk = delta.get("text", "")
 
                     if text_chunk:
-                        await self.on_message(
+                        await self.app.actions.handle_agent_message(
                             AgentMessage(
                                 type=AgentMessageType.STREAM_EVENT,
                                 data={"text": text_chunk},
@@ -202,7 +204,7 @@ class AgentLoop:
                         )
 
             # Finally, post the agent assistant response
-            await self.on_message(
+            await self.app.actions.handle_agent_message(
                 AgentMessage(
                     type=AgentMessageType.ASSISTANT,
                     data={"content": content},
@@ -219,7 +221,7 @@ class AgentLoop:
 
         # Handle permission request queue
         async with self.permission_lock:
-            await self.on_message(
+            await self.app.actions.handle_agent_message(
                 AgentMessage(
                     type=AgentMessageType.TOOL_PERMISSION_REQUEST,
                     data={
@@ -252,11 +254,8 @@ class AgentLoop:
                 )
 
             if DENY:
-                await self.on_message(
-                    AgentMessage(
-                        type=AgentMessageType.SYSTEM,
-                        data=f"Permission denied for {tool_name}",
-                    )
+                self.app.actions.post_system_message(
+                    f"Permission denied for {tool_name}"
                 )
 
                 return PermissionResultDeny(
@@ -266,14 +265,7 @@ class AgentLoop:
                 )
 
             # If a user instead typed in a message (instead of confirming or denying)
-            # post it to chat. actions.respond_to_tool_permission will handle querying.
-            await self.on_message(
-                AgentMessage(
-                    type=AgentMessageType.USER,
-                    data=user_response,
-                )
-            )
-
+            # actions.respond_to_tool_permission will handle posting and querying.
             return PermissionResultDeny(
                 behavior="deny",
                 message=user_response,

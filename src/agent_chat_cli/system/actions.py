@@ -1,37 +1,61 @@
+from typing import TYPE_CHECKING
+
 from textual.widgets import Input
 
-from agent_chat_cli.system.agent_loop import AgentLoop
 from agent_chat_cli.utils.enums import ControlCommand
-from agent_chat_cli.components.chat_history import ChatHistory
+from agent_chat_cli.components.chat_history import ChatHistory, MessagePosted
+from agent_chat_cli.components.messages import Message
 from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
 from agent_chat_cli.components.tool_permission_prompt import ToolPermissionPrompt
 from agent_chat_cli.utils.logger import log_json
 
+if TYPE_CHECKING:
+    from agent_chat_cli.app import AgentChatCLIApp
+
 
 class Actions:
-    def __init__(self, app) -> None:
+    def __init__(self, app: "AgentChatCLIApp") -> None:
         self.app = app
-        self.agent_loop: AgentLoop = app.agent_loop
 
     def quit(self) -> None:
         self.app.exit()
 
     async def query(self, user_input: str) -> None:
-        await self.agent_loop.query_queue.put(user_input)
+        await self.app.agent_loop.query_queue.put(user_input)
+
+    async def submit_user_message(self, message: str) -> None:
+        from agent_chat_cli.components.user_input import UserInput
+
+        self.app.post_message(MessagePosted(Message.user(message)))
+
+        thinking_indicator = self.app.query_one(ThinkingIndicator)
+        thinking_indicator.is_thinking = True
+
+        user_input = self.app.query_one(UserInput)
+        input_widget = user_input.query_one(Input)
+        input_widget.cursor_blink = False
+
+        await self.query(message)
+
+    def post_system_message(self, message: str) -> None:
+        self.app.post_message(MessagePosted(Message.system(message)))
+
+    async def handle_agent_message(self, message) -> None:
+        await self.app.message_bus.handle_agent_message(message)
 
     async def interrupt(self) -> None:
         permission_prompt = self.app.query_one(ToolPermissionPrompt)
         if permission_prompt.is_visible:
             return
 
-        self.agent_loop.interrupting = True
-        await self.agent_loop.client.interrupt()
+        self.app.agent_loop.interrupting = True
+        await self.app.agent_loop.client.interrupt()
 
         thinking_indicator = self.app.query_one(ThinkingIndicator)
         thinking_indicator.is_thinking = False
 
     async def new(self) -> None:
-        await self.agent_loop.query_queue.put(ControlCommand.NEW_CONVERSATION)
+        await self.app.agent_loop.query_queue.put(ControlCommand.NEW_CONVERSATION)
 
         chat_history = self.app.query_one(ChatHistory)
         await chat_history.remove_children()
@@ -49,26 +73,25 @@ class Actions:
             }
         )
 
-        await self.agent_loop.permission_response_queue.put(response)
+        await self.app.agent_loop.permission_response_queue.put(response)
 
         permission_prompt = self.app.query_one(ToolPermissionPrompt)
         permission_prompt.is_visible = False
 
         user_input = self.app.query_one(UserInput)
         user_input.display = True
+
         input_widget = user_input.query_one(Input)
         input_widget.focus()
+
+        thinking_indicator = self.app.query_one(ThinkingIndicator)
+        thinking_indicator.is_thinking = True
+        input_widget.cursor_blink = False
 
         # Check if it's a deny or custom response (anything except yes/allow)
         normalized = response.lower().strip()
         if normalized not in ["y", "yes", "allow", ""]:
-            # Handle like a normal user query
-            thinking_indicator = self.app.query_one(ThinkingIndicator)
-            thinking_indicator.is_thinking = True
-            input_widget.cursor_blink = False
-
             if normalized in ["n", "no", "deny"]:
-                denial_message = "The user has denied the tool"
-                await self.query(denial_message)
+                await self.query("The user has denied the tool")
             else:
-                await self.query(response)
+                await self.submit_user_message(response)
