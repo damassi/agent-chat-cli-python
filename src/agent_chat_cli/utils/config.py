@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+from claude_agent_sdk import AgentDefinition
 import yaml
 from pydantic import BaseModel, Field
 
@@ -12,8 +13,8 @@ PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 class AgentConfig(BaseModel):
     description: str
     prompt: str
-    mcp_servers: list[str] = Field(default_factory=list)
-    disallowed_tools: list[str] = Field(default_factory=list)
+    tools: list[str] | None = None
+    model: list[str] | None = None
 
 
 class MCPServerConfig(BaseModel):
@@ -63,9 +64,16 @@ def load_config(
         base_system_prompt = load_prompt(raw_config["system_prompt"])
 
     if raw_config.get("agents"):
-        for agent_config in raw_config["agents"].values():
+        for agent_name, agent_config in raw_config["agents"].items():
             if agent_config.get("prompt"):
                 agent_config["prompt"] = load_prompt(agent_config["prompt"])
+
+            raw_config["agents"][agent_name] = AgentDefinition(
+                description=agent_config["description"],
+                prompt=agent_config["prompt"],
+                tools=agent_config["tools"],
+                model=agent_config["model"],
+            )
 
     mcp_server_prompts = []
 
