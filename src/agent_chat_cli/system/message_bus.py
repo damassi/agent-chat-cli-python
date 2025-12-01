@@ -18,11 +18,11 @@ from agent_chat_cli.utils.enums import AgentMessageType, ContentType
 from agent_chat_cli.utils.logger import log_json
 
 if TYPE_CHECKING:
-    from textual.app import App
+    from agent_chat_cli.app import AgentChatCLIApp
 
 
 class MessageBus:
-    def __init__(self, app: "App") -> None:
+    def __init__(self, app: "AgentChatCLIApp") -> None:
         self.app = app
         self.current_agent_message: AgentMessageWidget | None = None
         self.current_response_text = ""
@@ -37,6 +37,9 @@ class MessageBus:
 
             case AgentMessageType.SYSTEM:
                 await self._handle_system(message)
+
+            case AgentMessageType.USER:
+                await self._handle_user(message)
 
             case AgentMessageType.TOOL_PERMISSION_REQUEST:
                 await self._handle_tool_permission_request(message)
@@ -109,6 +112,15 @@ class MessageBus:
 
         await self._scroll_to_bottom()
 
+    async def _handle_user(self, message: AgentMessage) -> None:
+        user_content = (
+            message.data if isinstance(message.data, str) else str(message.data)
+        )
+
+        self.app.post_message(MessagePosted(Message.user(user_content)))
+
+        await self._scroll_to_bottom()
+
     async def _handle_tool_permission_request(self, message: AgentMessage) -> None:
         log_json(
             {
@@ -131,6 +143,11 @@ class MessageBus:
         await self._scroll_to_bottom()
 
     async def _handle_result(self) -> None:
+        # Check if there's a queued message (e.g., from custom permission response)
+        if not self.app.agent_loop.query_queue.empty():
+            # Don't turn off thinking - there's more work to do
+            return
+
         thinking_indicator = self.app.query_one(ThinkingIndicator)
         thinking_indicator.is_thinking = False
 

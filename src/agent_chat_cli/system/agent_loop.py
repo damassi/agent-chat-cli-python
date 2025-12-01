@@ -259,13 +259,6 @@ class AgentLoop:
                     )
                 )
 
-                await self.on_message(
-                    AgentMessage(
-                        type=AgentMessageType.ASSISTANT,
-                        data="What should we do differently?",
-                    )
-                )
-
                 return PermissionResultDeny(
                     behavior="deny",
                     message="User denied permission",
@@ -273,15 +266,13 @@ class AgentLoop:
                 )
 
             # If a user instead typed in a message (instead of confirming or denying)
-            # forward this on to the agent.
+            # post it to chat. actions.respond_to_tool_permission will handle querying.
             await self.on_message(
                 AgentMessage(
-                    type=AgentMessageType.SYSTEM,
-                    data=f"Custom response for {tool_name}: {user_response}",
+                    type=AgentMessageType.USER,
+                    data=user_response,
                 )
             )
-
-            await self.client.query(user_response)
 
             return PermissionResultDeny(
                 behavior="deny",

@@ -55,6 +55,11 @@ class UserInput(Widget):
         # Run agent query in background
         asyncio.create_task(self.query_agent(user_message))
 
+    async def on_input_blurred(self, event: Input.Blurred) -> None:
+        if self.display:
+            input_widget = self.query_one(Input)
+            input_widget.focus()
+
     async def query_agent(self, user_input: str) -> None:
         thinking_indicator = self.app.query_one(ThinkingIndicator)
         thinking_indicator.is_thinking = True

@@ -51,9 +51,6 @@ class Actions:
 
         await self.agent_loop.permission_response_queue.put(response)
 
-        thinking_indicator = self.app.query_one(ThinkingIndicator)
-        thinking_indicator.is_thinking = True
-
         permission_prompt = self.app.query_one(ToolPermissionPrompt)
         permission_prompt.is_visible = False
 
@@ -61,3 +58,17 @@ class Actions:
         user_input.display = True
         input_widget = user_input.query_one(Input)
         input_widget.focus()
+
+        # Check if it's a deny or custom response (anything except yes/allow)
+        normalized = response.lower().strip()
+        if normalized not in ["y", "yes", "allow", ""]:
+            # Handle like a normal user query
+            thinking_indicator = self.app.query_one(ThinkingIndicator)
+            thinking_indicator.is_thinking = True
+            input_widget.cursor_blink = False
+
+            if normalized in ["n", "no", "deny"]:
+                denial_message = "The user has denied the tool"
+                await self.query(denial_message)
+            else:
+                await self.query(response)
