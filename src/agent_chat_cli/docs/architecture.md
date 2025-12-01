@@ -15,6 +15,7 @@ Textual widgets responsible for UI rendering:
 - **Message widgets**: SystemMessage, UserMessage, AgentMessage, ToolMessage
 - **UserInput**: Handles user text input and submission
 - **ThinkingIndicator**: Shows when agent is processing
+- **ToolPermissionPrompt**: Interactive widget for approving/denying tool execution requests
 
 ### System Layer
 
@@ -26,6 +27,9 @@ Manages the conversation loop with Claude SDK:
 - Emits AgentMessageType events (STREAM_EVENT, ASSISTANT, RESULT)
 - Manages session persistence via session_id
 - Supports dynamic MCP server inference and loading
+- Implements `_can_use_tool` callback for interactive tool permission requests
+- Uses `permission_lock` (asyncio.Lock) to serialize parallel permission requests
+- Manages `permission_response_queue` for user responses to tool permission prompts
 
 #### MCP Server Inference (`system/mcp_inference.py`)
 Intelligently determines which MCP servers are needed for each query:
@@ -42,19 +46,23 @@ Routes agent messages to appropriate UI components:
 - Controls thinking indicator state
 - Manages scroll-to-bottom behavior
 - Displays system messages (e.g., MCP server connection notifications)
+- Detects tool permission requests and shows ToolPermissionPrompt
+- Manages UI transitions between UserInput and ToolPermissionPrompt
 
 #### Actions (`system/actions.py`)
 Centralizes all user-initiated actions and controls:
 - **quit()**: Exits the application
 - **query(user_input)**: Sends user query to agent loop queue
-- **interrupt()**: Stops streaming mid-execution by setting interrupt flag and calling SDK interrupt
+- **interrupt()**: Stops streaming mid-execution by setting interrupt flag and calling SDK interrupt (ignores ESC when tool permission prompt is visible)
 - **new()**: Starts new conversation by sending NEW_CONVERSATION control command
+- **respond_to_tool_permission(response)**: Handles tool permission responses, manages UI state transitions between permission prompt and user input
 - Manages UI state (thinking indicator, chat history clearing)
-- Directly accesses agent_loop internals (query_queue, client, interrupting flag)
+- Directly accesses agent_loop internals (query_queue, client, interrupting flag, permission_response_queue)
 
 Actions are triggered via:
 - Keybindings in app.py (ESC → action_interrupt, Ctrl+N → action_new)
 - Text commands in user_input.py ("exit", "clear")
+- Component events (ToolPermissionPrompt.on_input_submitted → respond_to_tool_permission)
 
 ### Utils Layer
 
@@ -211,6 +219,103 @@ mcp_servers:
     # ... rest of config
 ```
 
+## Tool Permission System
+
+The application implements interactive tool permission requests that allow users to approve or deny tool execution in real-time.
+
+### Components
+
+#### ToolPermissionPrompt (`components/tool_permission_prompt.py`)
+Textual widget that displays permission requests to the user:
+- Shows tool name with MCP server info
+- Provides input field for user response
+- Supports Enter (approve), ESC (deny), or custom text responses
+
+### Permission Flow
+
+```
+Tool Execution Request (from Claude SDK)
+    ↓
+AgentLoop._can_use_tool (callback with permission_lock acquired)
+    ↓
+Emit SYSTEM AgentMessage with tool_permission_request data
+    ↓
+MessageBus._handle_system detects permission request
+    ↓
+Show ToolPermissionPrompt, hide UserInput
+    ↓
+User Response:
+    - Enter (or "yes") → Approve
+    - ESC (or "no") → Deny
+    - Custom text → Send to Claude as alternative instruction
+    ↓
+Actions.respond_to_tool_permission(response)
+    ↓
+Put response on permission_response_queue
+    ↓
+Hide ToolPermissionPrompt, show UserInput
+    ↓
+AgentLoop._can_use_tool receives response
+    ↓
+Return PermissionResultAllow or PermissionResultDeny
+    ↓
+Next tool permission request (if multiple tools called)
+```
+
+### Serialization with Permission Lock
+
+When multiple tools request permission in parallel, a `permission_lock` (asyncio.Lock) ensures they are handled sequentially:
+
+1. First tool acquires lock → Shows prompt → Waits for response → Releases lock
+2. Second tool acquires lock → Shows prompt → Waits for response → Releases lock
+3. Third tool acquires lock → Shows prompt → Waits for response → Releases lock
+
+This prevents race conditions where multiple prompts would overwrite each other and ensures each tool gets a dedicated user response.
+
+### Permission Responses
+
+The `_can_use_tool` callback returns typed permission results:
+
+**Approve (CONFIRM)**:
+```python
+return PermissionResultAllow(
+    behavior="allow",
+    updated_input=tool_input,
+)
+```
+
+**Deny (DENY)**:
+```python
+return PermissionResultDeny(
+    behavior="deny",
+    message="User denied permission",
+    interrupt=True,
+)
+```
+
+**Custom Response**:
+```python
+return PermissionResultDeny(
+    behavior="deny",
+    message=user_response,  # Alternative instruction sent to Claude
+    interrupt=True,
+)
+```
+
+### ESC Key Handling
+
+When ToolPermissionPrompt is visible, the ESC key is intercepted:
+- `Actions.interrupt()` checks `permission_prompt.is_visible`
+- If visible, returns early without interrupting the agent
+- ToolPermissionPrompt's `on_key` handler processes ESC to deny the tool
+- If not visible, ESC performs normal interrupt behavior
+
+### System Messages
+
+Permission denials generate system messages in the chat:
+- **Denied**: `"Permission denied for {tool_name}"`
+- **Custom response**: `"Custom response for {tool_name}: {user_response}"`
+
 ## User Commands
 
 ### Text Commands
@@ -219,7 +324,7 @@ mcp_servers:
 
 ### Keybindings
 - **Ctrl+C**: Quit application
-- **ESC**: Interrupt streaming response
+- **ESC**: Interrupt streaming response (or deny tool permission if prompt visible)
 - **Ctrl+N**: Start new conversation
 
 ## Session Management
@@ -274,3 +379,5 @@ SDK reconnects to previous session with full history
 - Control commands are queued alongside user queries to ensure proper task ordering
 - Agent loop processes both strings (user queries) and ControlCommands from the same queue
 - Interrupt flag is checked on each streaming message to enable immediate stop
+- Tool permission requests are serialized via asyncio.Lock to handle parallel tool calls sequentially
+- Permission responses use typed SDK objects (PermissionResultAllow, PermissionResultDeny) rather than plain dictionaries

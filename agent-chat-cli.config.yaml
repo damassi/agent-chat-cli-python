@@ -57,4 +57,4 @@ mcp_servers:
 disallowed_tools: []
 
 # Permission mode for tool execution
-permission_mode: "bypassPermissions"
+permission_mode: "default"

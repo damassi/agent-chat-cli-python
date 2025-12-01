@@ -24,7 +24,7 @@ make install
 Update the `.env` with your `ANTHROPIC_API_KEY` and then run:
 
 ```bash
-make chat
+make start
 
 # Alternatively, if in dev (see below)
 make dev
