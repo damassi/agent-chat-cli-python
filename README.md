@@ -1,14 +1,16 @@
 # Agent Chat CLI
 
-This is a less feature-rich Python version of [agent-chat-cli](https://github.com/damassi/agent-chat-cli), which uses the [claude-agent-sdk](https://github.com/anthropics/claude-agent-sdk-python) under the hood. Terminal UI is built on top of the very impressive [Textual](https://textual.textualize.io/).
+This is the Python version of [agent-chat-cli](https://github.com/damassi/agent-chat-cli), which uses the [claude-agent-sdk](https://github.com/anthropics/claude-agent-sdk-python) under the hood. Terminal UI is built on top of the very impressive [Textual](https://textual.textualize.io/).
 
 https://github.com/user-attachments/assets/66a1d462-e51a-419f-80f3-fa69ee60db9c
 
 ## Why?
 
-This tool is for those who want slightly more control over their MCP servers via configurable system prompts, and a minimal terminal-based MCP form factor for interaction. Many more things are possible thanks to the Claude Agent SDK, but the main purpose, at least for me, is a simple, humble and performant MCP interface to whatever tools I typically use day-to-day.
+This tool is for those who want slightly more behavioral control over their MCP servers via configurable system prompts, and a minimal terminal-based MCP form factor for interaction.
 
-> Note: The Python version is visually sturdier than the Node.js version. No more crazy terminal flashing like in Claude Code!
+Many different things are possible here thanks to the underlying Claude Agent SDK -- think of this as a light-weight `claude-code` -- but the main purpose, at least for me, is a simple and performant MCP interface to whatever tools I typically use day-to-day, something that lives outside of an editor or `claude` itself.
+
+> **Note**: The Python/Textual version is visually sturdier than the Node.js/React Ink version. No more crazy Node.js terminal jank in long-running sessions!
 
 ## Setup
 
@@ -30,18 +32,20 @@ make start
 make dev
 ```
 
-Additional MCP servers are configured in `agent-chat-cli.config.yaml` and prompts added within the `prompts` folder. By default, MCP servers are loaded dynamically via inference; set `mcp_server_inference: false` to load all servers at startup.
+Additional MCP servers are configured in `agent-chat-cli.config.yaml` and prompts added within the `prompts` folder.
+
+Optionally, MCP servers can be lazy-loaded via chat inference, which is useful if you have many MCP servers or MCP servers with many tools; set `mcp_server_inference: true` to enable it.
 
 ## Development
 
 - Install pre-commit hooks via [pre-commit](https://pre-commit.com/)
   - `uv run pre-commit install`
-- Typechecking is via [MyPy](https://github.com/python/mypy):
+- Type-checking is via [MyPy](https://github.com/python/mypy):
   - `uv run mypy src`
 - Linting and formatting is via [Ruff](https://docs.astral.sh/ruff/)
   - `uv run ruff check src`
 
-Textual has an integrated logging console which one can boot separately from the app to receive logs.
+Textual has an integrated logging console that one can boot separately from the app to receive logs.
 
 In one terminal pane boot the console:
 

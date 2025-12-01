@@ -76,6 +76,7 @@ Caret {
     height: 1;
     width: auto;
     margin-right: 1;
+    opacity: 0.5;
 }
 
 Input {

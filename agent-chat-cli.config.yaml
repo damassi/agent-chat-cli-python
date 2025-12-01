@@ -1,32 +1,22 @@
 # Agent Chat CLI Configuration
 
-# System prompt loaded from file
+# System prompt loaded from /prompts folder
 system_prompt: system.md
 
-# Model to use (e.g., sonnet, opus, haiku)
+# Model to use (e.g., sonnet, haiku)
 model: haiku
 
-# Enable streaming responses
+# Enable streaming
 include_partial_messages: true
 
-# Enable dynamic MCP server inference
+# Enable dynamic/lazy MCP server inference
 mcp_server_inference: false
-
-# Named agents with custom configurations
-# agents:
-#   sample_agent:
-#     description: "Example agent for demonstration"
-#     prompt: "You are a helpful assistant named Foo."
-#     mcp_servers:
-#       - chrome
-#       - github
-#     disallowed_tools: []
 
 # MCP server configurations
 mcp_servers:
   chrome:
     description: "Browser automation and debugging capabilities for AI agents"
-    command: "bunx"
+    command: "npx"
     args:
       - "chrome-devtools-mcp@latest"
     disallowed_tools: []
@@ -35,7 +25,7 @@ mcp_servers:
   github:
     description: "Search remote code, PRs, issues; discover documentation and deployment guides"
     prompt: "github.md"
-    command: "bunx"
+    command: "npx"
     args:
       - "mcp-remote@0.1.29"
       - "https://api.githubcopilot.com/mcp/readonly"
@@ -46,7 +36,7 @@ mcp_servers:
 
   notion:
     description: "Access workspace documentation, wikis, OKRs, and onboarding guides with hierarchical navigation"
-    command: "bunx"
+    command: "npx"
     args:
       - "mcp-remote@0.1.29"
       - "https://mcp.notion.com/mcp"
@@ -58,3 +48,15 @@ disallowed_tools: []
 
 # Permission mode for tool execution
 permission_mode: "default"
+#
+# TODO: Need to implement
+
+# Named agents with custom configurations
+# agents:
+#   sample_agent:
+#     description: "Example agent for demonstration"
+#     prompt: "You are a helpful assistant named Foo."
+#     mcp_servers:
+#       - chrome
+#       - github
+#     disallowed_tools: []

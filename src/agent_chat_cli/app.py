@@ -25,8 +25,8 @@ class AgentChatCLIApp(App):
 
     BINDINGS = [
         Binding("ctrl+c", "quit", "Quit", show=False, priority=True),
-        Binding("escape", "interrupt", "Interrupt", show=True),
         Binding("ctrl+n", "new", "New", show=True),
+        Binding("escape", "interrupt", "Interrupt", show=True),
     ]
 
     def __init__(self) -> None:
