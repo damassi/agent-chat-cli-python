@@ -48,7 +48,6 @@ disallowed_tools: []
 
 # Permission mode for tool execution
 permission_mode: "default"
-#
 # TODO: Need to implement
 
 # Named agents with custom configurations
@@ -56,7 +55,3 @@ permission_mode: "default"
 #   sample_agent:
 #     description: "Example agent for demonstration"
 #     prompt: "You are a helpful assistant named Foo."
-#     mcp_servers:
-#       - chrome
-#       - github
-#     disallowed_tools: []

@@ -10,13 +10,6 @@ from agent_chat_cli.utils.system_prompt import build_system_prompt
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
 
-class AgentConfig(BaseModel):
-    description: str
-    prompt: str
-    tools: list[str] | None = None
-    model: list[str] | None = None
-
-
 class MCPServerConfig(BaseModel):
     description: str
     command: str
@@ -30,9 +23,9 @@ class MCPServerConfig(BaseModel):
 class AgentChatConfig(BaseModel):
     system_prompt: str
     model: str
-    include_partial_messages: bool = True  # Enable streaming responses
-    mcp_server_inference: bool = True  # Enable dynamic MCP server inference
-    agents: dict[str, AgentConfig] = Field(default_factory=dict)
+    include_partial_messages: bool = True
+    mcp_server_inference: bool = True
+    agents: dict[str, AgentDefinition] = Field(default_factory=dict)
     mcp_servers: dict[str, MCPServerConfig] = Field(default_factory=dict)
     disallowed_tools: list[str] = Field(default_factory=list)
     permission_mode: str = "bypass_permissions"
@@ -71,8 +64,8 @@ def load_config(
             raw_config["agents"][agent_name] = AgentDefinition(
                 description=agent_config["description"],
                 prompt=agent_config["prompt"],
-                tools=agent_config["tools"],
-                model=agent_config["model"],
+                tools=agent_config.get("tools"),
+                model=agent_config.get("model"),
             )
 
     mcp_server_prompts = []
