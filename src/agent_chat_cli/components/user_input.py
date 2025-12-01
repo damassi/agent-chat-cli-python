@@ -1,14 +1,9 @@
-import asyncio
-
 from textual.widget import Widget
 from textual.app import ComposeResult
 from textual.widgets import Input
 
 from agent_chat_cli.components.caret import Caret
 from agent_chat_cli.components.flex import Flex
-from agent_chat_cli.components.chat_history import MessagePosted
-from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
-from agent_chat_cli.components.messages import Message
 from agent_chat_cli.system.actions import Actions
 from agent_chat_cli.utils.enums import ControlCommand
 
@@ -49,22 +44,9 @@ class UserInput(Widget):
             await self.actions.new()
             return
 
-        # Post to chat history
-        self.post_message(MessagePosted(Message.user(user_message)))
-
-        # Run agent query in background
-        asyncio.create_task(self.query_agent(user_message))
+        await self.actions.submit_user_message(user_message)
 
     async def on_input_blurred(self, event: Input.Blurred) -> None:
         if self.display:
             input_widget = self.query_one(Input)
             input_widget.focus()
-
-    async def query_agent(self, user_input: str) -> None:
-        thinking_indicator = self.app.query_one(ThinkingIndicator)
-        thinking_indicator.is_thinking = True
-
-        input_widget = self.query_one(Input)
-        input_widget.cursor_blink = False
-
-        await self.actions.query(user_input)
