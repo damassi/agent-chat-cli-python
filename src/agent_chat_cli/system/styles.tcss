@@ -27,6 +27,7 @@ VerticalScroll {
     padding-top: 1;
     padding-left: 2;
     background: transparent;
+    scrollbar-size: 0 0;
 }
 
 Header {
@@ -47,6 +48,11 @@ BalloonSpinner {
     width: auto;
     height: 1;
     margin-right: 1;
+}
+
+ToolPermissionPrompt {
+    height: auto;
+    margin-bottom: 1;
 }
 
 UserInput {

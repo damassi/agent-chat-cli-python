@@ -11,6 +11,10 @@ from claude_agent_sdk.types import (
     SystemMessage,
     TextBlock,
     ToolUseBlock,
+    ToolPermissionContext,
+    PermissionResult,
+    PermissionResultAllow,
+    PermissionResultDeny,
 )
 
 from agent_chat_cli.utils.config import (
@@ -44,25 +48,18 @@ class AgentLoop:
 
         self.on_message = on_message
         self.query_queue: asyncio.Queue[str | ControlCommand] = asyncio.Queue()
+        self.permission_response_queue: asyncio.Queue[str] = asyncio.Queue()
+        self.permission_lock = asyncio.Lock()
 
         self._running = False
         self.interrupting = False
 
-    async def _initialize_client(self, mcp_servers: dict) -> None:
-        sdk_config = get_sdk_config(self.config)
-        sdk_config["mcp_servers"] = mcp_servers
-
-        if self.session_id:
-            sdk_config["resume"] = self.session_id
-
-        self.client = ClaudeSDKClient(options=ClaudeAgentOptions(**sdk_config))
-
-        await self.client.connect()
-
     async def start(self) -> None:
+        # Boot MCP servers lazily
         if self.config.mcp_server_inference:
             await self._initialize_client(mcp_servers={})
         else:
+            # Boot MCP servers all at once
             mcp_servers = {
                 name: config.model_dump()
                 for name, config in self.available_servers.items()
@@ -75,12 +72,14 @@ class AgentLoop:
         while self._running:
             user_input = await self.query_queue.get()
 
+            # Check for new convo flags
             if isinstance(user_input, ControlCommand):
                 if user_input == ControlCommand.NEW_CONVERSATION:
                     self.inferred_servers.clear()
 
                     await self.client.disconnect()
 
+                    # Reset MCP servers based on config settings
                     if self.config.mcp_server_inference:
                         await self._initialize_client(mcp_servers={})
                     else:
@@ -92,6 +91,7 @@ class AgentLoop:
                         await self._initialize_client(mcp_servers=mcp_servers)
                 continue
 
+            # Infer MCP servers based on user messages in chat
             if self.config.mcp_server_inference:
                 inference_result = await infer_mcp_servers(
                     user_message=user_input,
@@ -100,6 +100,7 @@ class AgentLoop:
                     session_id=self.session_id,
                 )
 
+                # If there are new results, create an updated mcp_server list
                 if inference_result["new_servers"]:
                     server_list = ", ".join(inference_result["new_servers"])
 
@@ -112,6 +113,8 @@ class AgentLoop:
 
                     await asyncio.sleep(0.1)
 
+                    # If there's updates, we reinitialize the agent SDK (with the
+                    # persisted session_id from the turn, stored in the instance)
                     await self.client.disconnect()
 
                     mcp_servers = {
@@ -126,6 +129,7 @@ class AgentLoop:
             # Send query
             await self.client.query(user_input)
 
+            # Wait for messages from Claude
             async for message in self.client.receive_response():
                 if self.interrupting:
                     continue
@@ -134,6 +138,20 @@ class AgentLoop:
 
             await self.on_message(AgentMessage(type=AgentMessageType.RESULT, data=None))
 
+    async def _initialize_client(self, mcp_servers: dict) -> None:
+        sdk_config = get_sdk_config(self.config)
+
+        sdk_config["mcp_servers"] = mcp_servers
+        sdk_config["can_use_tool"] = self._can_use_tool
+
+        if self.session_id:
+            sdk_config["resume"] = self.session_id
+
+        # Init the Agent
+        self.client = ClaudeSDKClient(options=ClaudeAgentOptions(**sdk_config))
+
+        await self.client.connect()
+
     async def _handle_message(self, message: Any) -> None:
         if isinstance(message, SystemMessage):
             log_json(message.data)
@@ -141,14 +159,17 @@ class AgentLoop:
             if message.subtype == AgentMessageType.INIT.value and message.data.get(
                 "session_id"
             ):
+                # When initializing the chat, we store the session_id for later
                 self.session_id = message.data["session_id"]
 
+        # Handle streaming messages
         if hasattr(message, "event"):
             event = message.event  # type: ignore[attr-defined]
 
             if event.get("type") == ContentType.CONTENT_BLOCK_DELTA.value:
                 delta = event.get("delta", {})
 
+                # Chunk in streaming text
                 if delta.get("type") == ContentType.TEXT_DELTA.value:
                     text_chunk = delta.get("text", "")
 
@@ -159,9 +180,11 @@ class AgentLoop:
                                 data={"text": text_chunk},
                             )
                         )
+
         elif isinstance(message, AssistantMessage):
             content = []
 
+            # Handle different kinds of content types
             if hasattr(message, "content"):
                 for block in message.content:  # type: ignore[attr-defined]
                     if isinstance(block, TextBlock):
@@ -178,9 +201,90 @@ class AgentLoop:
                             }
                         )
 
+            # Finally, post the agent assistant response
             await self.on_message(
                 AgentMessage(
                     type=AgentMessageType.ASSISTANT,
                     data={"content": content},
                 )
+            )
+
+    async def _can_use_tool(
+        self,
+        tool_name: str,
+        tool_input: dict[str, Any],
+        context: ToolPermissionContext,
+    ) -> PermissionResult:
+        """Agent SDK handler for tool use permissions"""
+
+        # Handle permission request queue
+        async with self.permission_lock:
+            await self.on_message(
+                AgentMessage(
+                    type=AgentMessageType.TOOL_PERMISSION_REQUEST,
+                    data={
+                        "tool_name": tool_name,
+                        "tool_input": tool_input,
+                    },
+                )
+            )
+
+            # Grab response from permission queue
+            user_response = await self.permission_response_queue.get()
+            response = user_response.lower().strip()
+
+            CONFIRM = response in ["y", "yes", "allow", ""]
+            DENY = response in ["n", "no", "deny"]
+
+            log_json(
+                {
+                    "event": "tool_permission_decision",
+                    "response": response,
+                    "CONFIRM": CONFIRM,
+                    "DENY": DENY,
+                }
+            )
+
+            if CONFIRM:
+                return PermissionResultAllow(
+                    behavior="allow",
+                    updated_input=tool_input,
+                )
+
+            if DENY:
+                await self.on_message(
+                    AgentMessage(
+                        type=AgentMessageType.SYSTEM,
+                        data=f"Permission denied for {tool_name}",
+                    )
+                )
+
+                await self.on_message(
+                    AgentMessage(
+                        type=AgentMessageType.ASSISTANT,
+                        data="What should we do differently?",
+                    )
+                )
+
+                return PermissionResultDeny(
+                    behavior="deny",
+                    message="User denied permission",
+                    interrupt=True,
+                )
+
+            # If a user instead typed in a message (instead of confirming or denying)
+            # forward this on to the agent.
+            await self.on_message(
+                AgentMessage(
+                    type=AgentMessageType.SYSTEM,
+                    data=f"Custom response for {tool_name}: {user_response}",
+                )
+            )
+
+            await self.client.query(user_response)
+
+            return PermissionResultDeny(
+                behavior="deny",
+                message=user_response,
+                interrupt=True,
             )

@@ -7,6 +7,7 @@ class AgentMessageType(Enum):
     RESULT = "result"
     STREAM_EVENT = "stream_event"
     SYSTEM = "system"
+    TOOL_PERMISSION_REQUEST = "tool_permission_request"
 
 
 class ContentType(Enum):

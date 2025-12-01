@@ -7,6 +7,7 @@ from textual.binding import Binding
 from agent_chat_cli.components.header import Header
 from agent_chat_cli.components.chat_history import ChatHistory, MessagePosted
 from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
+from agent_chat_cli.components.tool_permission_prompt import ToolPermissionPrompt
 from agent_chat_cli.components.user_input import UserInput
 from agent_chat_cli.system.agent_loop import AgentLoop
 from agent_chat_cli.system.message_bus import MessageBus
@@ -38,12 +39,14 @@ class AgentChatCLIApp(App):
         )
 
         self.actions = Actions(self)
+        self.pending_tool_permission: dict | None = None
 
     def compose(self) -> ComposeResult:
         with VerticalScroll():
             yield Header()
             yield ChatHistory()
             yield ThinkingIndicator()
+            yield ToolPermissionPrompt(actions=self.actions)
             yield UserInput(actions=self.actions)
 
     async def on_mount(self) -> None:
