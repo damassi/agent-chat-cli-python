@@ -10,7 +10,7 @@ model: haiku
 include_partial_messages: true
 
 # Enable dynamic MCP server inference
-mcp_server_inference: true
+mcp_server_inference: false
 
 # Named agents with custom configurations
 # agents:
