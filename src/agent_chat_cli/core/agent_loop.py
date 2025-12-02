@@ -23,7 +23,7 @@ from agent_chat_cli.utils.config import (
     get_sdk_config,
 )
 from agent_chat_cli.utils.enums import AgentMessageType, ContentType, ControlCommand
-from agent_chat_cli.system.mcp_inference import infer_mcp_servers
+from agent_chat_cli.core.mcp_inference import infer_mcp_servers
 from agent_chat_cli.utils.logger import log_json
 
 if TYPE_CHECKING:
@@ -219,7 +219,7 @@ class AgentLoop:
     ) -> PermissionResult:
         """Agent SDK handler for tool use permissions"""
 
-        # Handle permission request queue
+        # Handle permission request queue sequentially
         async with self.permission_lock:
             await self.app.actions.handle_agent_message(
                 AgentMessage(
@@ -235,25 +235,25 @@ class AgentLoop:
             user_response = await self.permission_response_queue.get()
             response = user_response.lower().strip()
 
-            CONFIRM = response in ["y", "yes", "allow", ""]
-            DENY = response in ["n", "no", "deny"]
+            accepted_tool = response in ["y", "yes", "allow", ""]
+            rejected_tool = response in ["n", "no", "deny"]
 
             log_json(
                 {
                     "event": "tool_permission_decision",
                     "response": response,
-                    "CONFIRM": CONFIRM,
-                    "DENY": DENY,
+                    "accepted_tool": accepted_tool,
+                    "rejected_tool": rejected_tool,
                 }
             )
 
-            if CONFIRM:
+            if accepted_tool:
                 return PermissionResultAllow(
                     behavior="allow",
                     updated_input=tool_input,
                 )
 
-            if DENY:
+            if rejected_tool:
                 self.app.actions.post_system_message(
                     f"Permission denied for {tool_name}"
                 )

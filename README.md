@@ -41,9 +41,9 @@ Optionally, MCP servers can be lazy-loaded via chat inference, which is useful i
 - Install pre-commit hooks via [pre-commit](https://pre-commit.com/)
   - `uv run pre-commit install`
 - Type-checking is via [MyPy](https://github.com/python/mypy):
-  - `uv run mypy src`
+  - `make type-check`
 - Linting and formatting is via [Ruff](https://docs.astral.sh/ruff/)
-  - `uv run ruff check src`
+  - `make lint`
 
 Textual has an integrated logging console that one can boot separately from the app to receive logs.
 

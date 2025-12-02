@@ -13,7 +13,7 @@ from agent_chat_cli.components.messages import (
     Message,
     ToolMessage,
 )
-from agent_chat_cli.system.agent_loop import AgentMessage
+from agent_chat_cli.core.agent_loop import AgentMessage
 from agent_chat_cli.utils.enums import AgentMessageType, ContentType
 from agent_chat_cli.utils.logger import log_json
 

@@ -12,7 +12,7 @@ from agent_chat_cli.utils import get_tool_info
 from agent_chat_cli.utils.logger import log_json
 
 if TYPE_CHECKING:
-    from agent_chat_cli.system.actions import Actions
+    from agent_chat_cli.core.actions import Actions
 
 
 class ToolPermissionPrompt(Widget):

@@ -1,16 +1,22 @@
 # Agent Chat CLI Configuration
+# See: https://platform.claude.com/docs/en/agent-sdk/python#claude-agent-options
 
-# System prompt loaded from /prompts folder
 system_prompt: system.md
 
-# Model to use (e.g., sonnet, haiku)
 model: haiku
 
 # Enable streaming
 include_partial_messages: true
 
-# Enable dynamic/lazy MCP server inference
+# Enable dynamic/lazy MCP server inference. Useful if one has many MCP servers or
+# many tools, or is cost conscious about loading everything up front.
 mcp_server_inference: false
+
+# Global tool restrictions
+disallowed_tools: ["Bash"]
+
+# Eg, 'default', 'bypassPermissions'
+permission_mode: "default"
 
 # MCP server configurations
 mcp_servers:
@@ -42,16 +48,3 @@ mcp_servers:
       - "https://mcp.notion.com/mcp"
     disallowed_tools: []
     enabled: false
-
-# Global tool restrictions
-disallowed_tools: []
-
-# Permission mode for tool execution
-permission_mode: "default"
-# TODO: Need to implement
-
-# Named agents with custom configurations
-# agents:
-#   sample_agent:
-#     description: "Example agent for demonstration"
-#     prompt: "You are a helpful assistant named Foo."

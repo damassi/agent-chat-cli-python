@@ -3,7 +3,7 @@ import time
 from dotenv import load_dotenv
 
 from agent_chat_cli.utils.config import get_available_servers
-from agent_chat_cli.system.mcp_inference import infer_mcp_servers, _inference_client
+from agent_chat_cli.core.mcp_inference import infer_mcp_servers, _inference_client
 
 load_dotenv()
 

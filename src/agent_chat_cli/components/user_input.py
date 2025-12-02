@@ -4,7 +4,7 @@ from textual.widgets import Input
 
 from agent_chat_cli.components.caret import Caret
 from agent_chat_cli.components.flex import Flex
-from agent_chat_cli.system.actions import Actions
+from agent_chat_cli.core.actions import Actions
 from agent_chat_cli.utils.enums import ControlCommand
 
 
