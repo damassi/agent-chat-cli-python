@@ -35,7 +35,6 @@ class AgentChatCLIApp(App):
         self.message_bus = MessageBus(app=self)
         self.actions = Actions(app=self)
         self.agent_loop = AgentLoop(app=self)
-        self.pending_tool_permission: dict | None = None
 
     def compose(self) -> ComposeResult:
         with VerticalScroll():
