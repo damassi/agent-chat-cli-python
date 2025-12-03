@@ -24,7 +24,7 @@ mcp_servers:
     description: "Browser automation and debugging capabilities for AI agents"
     command: "npx"
     args:
-      - "chrome-devtools-mcp@latest"
+      - "chrome-devtools-mcpp@latest"
     disallowed_tools: []
     enabled: true
 

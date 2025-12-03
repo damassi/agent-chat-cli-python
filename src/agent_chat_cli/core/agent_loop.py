@@ -25,6 +25,7 @@ from agent_chat_cli.utils.config import (
 from agent_chat_cli.utils.enums import AgentMessageType, ContentType, ControlCommand
 from agent_chat_cli.core.mcp_inference import infer_mcp_servers
 from agent_chat_cli.utils.logger import log_json
+from agent_chat_cli.utils.mcp_server_status import MCPServerStatus
 
 if TYPE_CHECKING:
     from agent_chat_cli.app import AgentChatCLIApp
@@ -164,6 +165,9 @@ class AgentLoop:
                 # When initializing the chat, we store the session_id for later
                 self.session_id = message.data["session_id"]
 
+                # Report status back to UI
+                MCPServerStatus.update(message.data["mcp_servers"])
+
         # Handle streaming messages
         if hasattr(message, "event"):
             event = message.event  # type: ignore[attr-defined]
@@ -215,7 +219,7 @@ class AgentLoop:
         self,
         tool_name: str,
         tool_input: dict[str, Any],
-        context: ToolPermissionContext,
+        _context: ToolPermissionContext,
     ) -> PermissionResult:
         """Agent SDK handler for tool use permissions"""
 
