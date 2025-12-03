@@ -2,7 +2,7 @@
 
 This is the Python version of [agent-chat-cli](https://github.com/damassi/agent-chat-cli), which uses the [claude-agent-sdk](https://github.com/anthropics/claude-agent-sdk-python) under the hood. Terminal UI is built on top of the very impressive [Textual](https://textual.textualize.io/).
 
-https://github.com/user-attachments/assets/66a1d462-e51a-419f-80f3-fa69ee60db9c
+https://github.com/user-attachments/assets/cc3369da-c06f-46b5-ac0f-66c82504a1ef
 
 ## Why?
 
