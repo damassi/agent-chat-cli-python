@@ -8,10 +8,6 @@ model: haiku
 # Enable streaming
 include_partial_messages: true
 
-# Enable dynamic/lazy MCP server inference. Useful if one has many MCP servers or
-# many tools, or is cost conscious about loading everything up front.
-mcp_server_inference: true
-
 # Global tool restrictions
 disallowed_tools: ["Bash"]
 
@@ -24,7 +20,7 @@ mcp_servers:
     description: "Browser automation and debugging capabilities for AI agents"
     command: "npx"
     args:
-      - "chrome-devtools-mcpp@latest"
+      - "chrome-devtools-mcp@latest"
     disallowed_tools: []
     enabled: true
 

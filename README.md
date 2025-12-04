@@ -34,8 +34,6 @@ make dev
 
 Additional MCP servers are configured in `agent-chat-cli.config.yaml` and prompts added within the `prompts` folder.
 
-Optionally, MCP servers can be lazy-loaded via chat inference, which is useful if you have many MCP servers or MCP servers with many tools; set `mcp_server_inference: true` to enable it.
-
 ## Development
 
 - Install pre-commit hooks via [pre-commit](https://pre-commit.com/)

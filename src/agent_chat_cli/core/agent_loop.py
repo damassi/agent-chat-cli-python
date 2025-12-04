@@ -8,6 +8,7 @@ from claude_agent_sdk import (
 )
 from claude_agent_sdk.types import (
     AssistantMessage,
+    Message,
     SystemMessage,
     TextBlock,
     ToolUseBlock,
@@ -23,8 +24,8 @@ from agent_chat_cli.utils.config import (
     get_sdk_config,
 )
 from agent_chat_cli.utils.enums import AgentMessageType, ContentType, ControlCommand
-from agent_chat_cli.core.mcp_inference import infer_mcp_servers
 from agent_chat_cli.utils.logger import log_json
+from agent_chat_cli.utils.mcp_server_status import MCPServerStatus
 
 if TYPE_CHECKING:
     from agent_chat_cli.app import AgentChatCLIApp
@@ -46,7 +47,6 @@ class AgentLoop:
         self.config = load_config()
         self.session_id = session_id
         self.available_servers = get_available_servers()
-        self.inferred_servers: set[str] = set()
 
         self.client: ClaudeSDKClient
 
@@ -58,78 +58,33 @@ class AgentLoop:
         self.interrupting = False
 
     async def start(self) -> None:
-        # Boot MCP servers lazily
-        if self.config.mcp_server_inference:
-            await self._initialize_client(mcp_servers={})
-        else:
-            # Boot MCP servers all at once
-            mcp_servers = {
-                name: config.model_dump()
-                for name, config in self.available_servers.items()
-            }
+        mcp_servers = {
+            name: config.model_dump() for name, config in self.available_servers.items()
+        }
 
-            await self._initialize_client(mcp_servers=mcp_servers)
+        await self._initialize_client(mcp_servers=mcp_servers)
 
         self._running = True
 
         while self._running:
             user_input = await self.query_queue.get()
 
-            # Check for new convo flags
             if isinstance(user_input, ControlCommand):
                 if user_input == ControlCommand.NEW_CONVERSATION:
-                    self.inferred_servers.clear()
-
-                    await self.client.disconnect()
-
-                    # Reset MCP servers based on config settings
-                    if self.config.mcp_server_inference:
-                        await self._initialize_client(mcp_servers={})
-                    else:
-                        mcp_servers = {
-                            name: config.model_dump()
-                            for name, config in self.available_servers.items()
-                        }
-
-                        await self._initialize_client(mcp_servers=mcp_servers)
-                continue
-
-            # Infer MCP servers based on user messages in chat
-            if self.config.mcp_server_inference:
-                inference_result = await infer_mcp_servers(
-                    user_message=user_input,
-                    available_servers=self.available_servers,
-                    inferred_servers=self.inferred_servers,
-                    session_id=self.session_id,
-                )
-
-                # If there are new results, create an updated mcp_server list
-                if inference_result["new_servers"]:
-                    server_list = ", ".join(inference_result["new_servers"])
-
-                    self.app.actions.post_system_message(
-                        f"Connecting to {server_list}..."
-                    )
-
-                    await asyncio.sleep(0.1)
-
-                    # If there's updates, we reinitialize the agent SDK (with the
-                    # persisted session_id from the turn, stored in the instance)
                     await self.client.disconnect()
 
                     mcp_servers = {
                         name: config.model_dump()
-                        for name, config in inference_result["selected_servers"].items()
+                        for name, config in self.available_servers.items()
                     }
 
                     await self._initialize_client(mcp_servers=mcp_servers)
+                continue
 
             self.interrupting = False
 
-            # Send query
             await self.client.query(user_input)
 
-            # Wait for messages from Claude
             async for message in self.client.receive_response():
                 if self.interrupting:
                     continue
@@ -154,7 +109,7 @@ class AgentLoop:
 
         await self.client.connect()
 
-    async def _handle_message(self, message: Any) -> None:
+    async def _handle_message(self, message: Message) -> None:
         if isinstance(message, SystemMessage):
             log_json(message.data)
 
@@ -164,8 +119,8 @@ class AgentLoop:
                 # When initializing the chat, we store the session_id for later
                 self.session_id = message.data["session_id"]
 
-                # Report status back to UI
-                # MCPServerStatus.update(message.data["mcp_servers"])
+                # Report connected / error status back to UI
+                MCPServerStatus.update(message.data["mcp_servers"])
 
         # Handle streaming messages
         if hasattr(message, "event"):

@@ -24,7 +24,6 @@ class AgentChatConfig(BaseModel):
     system_prompt: str
     model: str
     include_partial_messages: bool = True
-    mcp_server_inference: bool = True
     agents: dict[str, AgentDefinition] = Field(default_factory=dict)
     mcp_servers: dict[str, MCPServerConfig] = Field(default_factory=dict)
     disallowed_tools: list[str] = Field(default_factory=list)
@@ -109,6 +108,4 @@ def get_available_servers(
 
 
 def get_sdk_config(config: AgentChatConfig) -> dict:
-    sdk_config = config.model_dump()
-    sdk_config.pop("mcp_server_inference", None)
-    return sdk_config
+    return config.model_dump()
