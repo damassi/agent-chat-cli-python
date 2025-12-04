@@ -25,7 +25,6 @@ from agent_chat_cli.utils.config import (
 from agent_chat_cli.utils.enums import AgentMessageType, ContentType, ControlCommand
 from agent_chat_cli.core.mcp_inference import infer_mcp_servers
 from agent_chat_cli.utils.logger import log_json
-from agent_chat_cli.utils.mcp_server_status import MCPServerStatus
 
 if TYPE_CHECKING:
     from agent_chat_cli.app import AgentChatCLIApp
@@ -166,7 +165,7 @@ class AgentLoop:
                 self.session_id = message.data["session_id"]
 
                 # Report status back to UI
-                MCPServerStatus.update(message.data["mcp_servers"])
+                # MCPServerStatus.update(message.data["mcp_servers"])
 
         # Handle streaming messages
         if hasattr(message, "event"):
