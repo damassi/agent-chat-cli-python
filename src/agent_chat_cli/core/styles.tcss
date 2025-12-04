@@ -10,7 +10,7 @@ MarkdownH6 {
 }
 
 Screen {
-    background: transparent;
+    background: #222;
 }
 
 Spacer {

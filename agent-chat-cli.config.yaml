@@ -8,10 +8,6 @@ model: haiku
 # Enable streaming
 include_partial_messages: true
 
-# Enable dynamic/lazy MCP server inference. Useful if one has many MCP servers or
-# many tools, or is cost conscious about loading everything up front.
-mcp_server_inference: false
-
 # Global tool restrictions
 disallowed_tools: ["Bash"]
 
