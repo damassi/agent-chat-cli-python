@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING
 
-from textual.widgets import Input
-
 from agent_chat_cli.utils.enums import ControlCommand
 from agent_chat_cli.components.chat_history import ChatHistory, MessagePosted
 from agent_chat_cli.components.messages import Message
@@ -24,15 +22,14 @@ class Actions:
         await self.app.agent_loop.query_queue.put(user_input)
 
     async def submit_user_message(self, message: str) -> None:
-        from agent_chat_cli.components.user_input import UserInput
+        from textual.widgets import TextArea
 
         self.app.post_message(MessagePosted(Message.user(message)))
 
         thinking_indicator = self.app.query_one(ThinkingIndicator)
         thinking_indicator.is_thinking = True
 
-        user_input = self.app.query_one(UserInput)
-        input_widget = user_input.query_one(Input)
+        input_widget = self.app.query_one(TextArea)
         input_widget.cursor_blink = False
 
         await self.query(message)
@@ -65,6 +62,7 @@ class Actions:
 
     async def respond_to_tool_permission(self, response: str) -> None:
         from agent_chat_cli.components.user_input import UserInput
+        from textual.widgets import TextArea
 
         log_json(
             {
@@ -81,7 +79,7 @@ class Actions:
         user_input = self.app.query_one(UserInput)
         user_input.display = True
 
-        input_widget = user_input.query_one(Input)
+        input_widget = self.app.query_one(TextArea)
         input_widget.focus()
 
         thinking_indicator = self.app.query_one(ThinkingIndicator)

@@ -1,13 +1,12 @@
 import asyncio
 from typing import TYPE_CHECKING
 
-from textual.widgets import Input, Markdown
+from textual.widgets import Markdown
 from textual.containers import VerticalScroll
 
 from agent_chat_cli.components.chat_history import ChatHistory, MessagePosted
 from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
 from agent_chat_cli.components.tool_permission_prompt import ToolPermissionPrompt
-from agent_chat_cli.components.user_input import UserInput
 from agent_chat_cli.components.messages import (
     AgentMessage as AgentMessageWidget,
     Message,
@@ -122,6 +121,8 @@ class MessageBus:
         await self._scroll_to_bottom()
 
     async def _handle_tool_permission_request(self, message: AgentMessage) -> None:
+        from agent_chat_cli.components.user_input import UserInput
+
         log_json(
             {
                 "event": "showing_permission_prompt",
@@ -143,6 +144,8 @@ class MessageBus:
         await self._scroll_to_bottom()
 
     async def _handle_result(self) -> None:
+        from textual.widgets import TextArea
+
         # Check if there's a queued message (e.g., from custom permission response)
         if not self.app.agent_loop.query_queue.empty():
             # Don't turn off thinking - there's more work to do
@@ -151,8 +154,7 @@ class MessageBus:
         thinking_indicator = self.app.query_one(ThinkingIndicator)
         thinking_indicator.is_thinking = False
 
-        user_input = self.app.query_one(UserInput)
-        input_widget = user_input.query_one(Input)
+        input_widget = self.app.query_one(TextArea)
         input_widget.cursor_blink = True
 
         self.current_agent_message = None
