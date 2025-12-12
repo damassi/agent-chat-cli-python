@@ -1,6 +1,7 @@
 from textual.widget import Widget
 from textual.app import ComposeResult
-from textual.widgets import Input
+from textual.widgets import TextArea
+from textual.binding import Binding
 
 from agent_chat_cli.components.caret import Caret
 from agent_chat_cli.components.flex import Flex
@@ -11,6 +12,10 @@ from agent_chat_cli.utils.enums import ControlCommand
 class UserInput(Widget):
     first_boot = True
 
+    BINDINGS = [
+        Binding("enter", "submit", "Submit", priority=True),
+    ]
+
     def __init__(self, actions: Actions) -> None:
         super().__init__()
         self.actions = actions
@@ -18,16 +23,19 @@ class UserInput(Widget):
     def compose(self) -> ComposeResult:
         with Flex():
             yield Caret()
-            yield Input(
-                placeholder="" if self.first_boot else "",
+            yield TextArea(
+                "",
+                show_line_numbers=False,
+                soft_wrap=True,
             )
 
     def on_mount(self) -> None:
-        input_widget = self.query_one(Input)
+        input_widget = self.query_one(TextArea)
         input_widget.focus()
 
-    async def on_input_submitted(self, event: Input.Submitted) -> None:
-        user_message = event.value.strip()
+    async def action_submit(self) -> None:
+        input_widget = self.query_one(TextArea)
+        user_message = input_widget.text.strip()
 
         if not user_message:
             return
@@ -36,8 +44,7 @@ class UserInput(Widget):
             self.actions.quit()
             return
 
-        input_widget = self.query_one(Input)
-        input_widget.value = ""
+        input_widget.clear()
 
         if user_message.lower() == ControlCommand.CLEAR.value:
             await self.actions.interrupt()
@@ -45,8 +52,3 @@ class UserInput(Widget):
             return
 
         await self.actions.submit_user_message(user_message)
-
-    async def on_input_blurred(self, event: Input.Blurred) -> None:
-        if self.display:
-            input_widget = self.query_one(Input)
-            input_widget.focus()
