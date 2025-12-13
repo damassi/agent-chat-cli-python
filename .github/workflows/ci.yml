@@ -1,4 +1,4 @@
-name: Type Check
+name: CI
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  type-check:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,5 +20,14 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Run mypy
-        run: uv run mypy src/agent_chat_cli
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Run linter
+        run: uv run ruff check src tests
+
+      - name: Run type checker
+        run: uv run mypy src
+
+      - name: Run tests
+        run: uv run pytest

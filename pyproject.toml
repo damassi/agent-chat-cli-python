@@ -19,6 +19,9 @@ dependencies = [
 dev = [
     "mypy>=1.19.0",
     "pre-commit>=4.3.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-textual-snapshot>=1.0.0",
     "ruff>=0.14.7",
     "textual-dev>=1.8.0",
     "types-pyyaml>=6.0.12.20250915",
@@ -30,3 +33,9 @@ dev = "textual_dev.cli:run"
 
 [tool.uv]
 package = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+pythonpath = ["src"]

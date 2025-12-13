@@ -1,0 +1,10 @@
+system_prompt: "You are a helpful assistant."
+model: "claude-sonnet-4-20250514"
+permission_mode: "bypass_permissions"
+
+mcp_servers:
+  test_server:
+    description: "Test MCP server"
+    command: "echo"
+    args: ["test"]
+    enabled: true
