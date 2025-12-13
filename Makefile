@@ -1,4 +1,4 @@
-.PHONY: dev console lint install start type-check
+.PHONY: dev console lint install start test type-check
 
 install:
 	uv sync && uv run pre-commit install && cp .env.example .env && echo "Please edit the .env file with your API keys."
@@ -14,6 +14,9 @@ lint:
 
 start:
 	uv run chat
+
+test:
+	uv run pytest
 
 type-check:
 	uv run mypy src

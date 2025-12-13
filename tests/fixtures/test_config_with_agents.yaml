@@ -1,0 +1,10 @@
+system_prompt: "You are a helpful assistant."
+model: "claude-sonnet-4-20250514"
+
+agents:
+  researcher:
+    description: "Research agent"
+    prompt: "You are a research agent."
+    tools:
+      - web_search
+      - read_file

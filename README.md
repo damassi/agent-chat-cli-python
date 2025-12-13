@@ -42,6 +42,12 @@ Additional MCP servers are configured in `agent-chat-cli.config.yaml` and prompt
   - `make type-check`
 - Linting and formatting is via [Ruff](https://docs.astral.sh/ruff/)
   - `make lint`
+- Testing is via [pytest](https://docs.pytest.org/):
+  - `make test`
+
+See [docs/architecture.md](docs/architecture.md) for an overview of the codebase structure.
+
+### Textual Dev Console
 
 Textual has an integrated logging console that one can boot separately from the app to receive logs.
 

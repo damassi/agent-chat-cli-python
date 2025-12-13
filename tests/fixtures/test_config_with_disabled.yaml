@@ -1,0 +1,14 @@
+system_prompt: "You are a helpful assistant."
+model: "claude-sonnet-4-20250514"
+
+mcp_servers:
+  enabled_server:
+    description: "Enabled server"
+    command: "echo"
+    args: ["enabled"]
+    enabled: true
+  disabled_server:
+    description: "Disabled server"
+    command: "echo"
+    args: ["disabled"]
+    enabled: false
