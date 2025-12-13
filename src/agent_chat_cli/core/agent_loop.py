@@ -55,7 +55,6 @@ class AgentLoop:
         self.permission_lock = asyncio.Lock()
 
         self._running = False
-        self.interrupting = False
 
     async def start(self) -> None:
         mcp_servers = {
@@ -81,12 +80,12 @@ class AgentLoop:
                     await self._initialize_client(mcp_servers=mcp_servers)
                 continue
 
-            self.interrupting = False
+            self.app.ui_state.set_interrupting(False)
 
             await self.client.query(user_input)
 
             async for message in self.client.receive_response():
-                if self.interrupting:
+                if self.app.ui_state.interrupting:
                     continue
 
                 await self._handle_message(message)

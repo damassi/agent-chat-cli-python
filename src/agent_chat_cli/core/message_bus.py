@@ -1,12 +1,10 @@
 import asyncio
 from typing import TYPE_CHECKING
 
-from textual.widgets import Markdown, TextArea
+from textual.widgets import Markdown
 from textual.containers import VerticalScroll
 
 from agent_chat_cli.components.chat_history import ChatHistory, MessagePosted
-from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
-from agent_chat_cli.components.tool_permission_prompt import ToolPermissionPrompt
 from agent_chat_cli.components.messages import (
     AgentMessage as AgentMessageWidget,
     Message,
@@ -46,11 +44,11 @@ class MessageBus:
             case AgentMessageType.RESULT:
                 await self._handle_result()
 
-    async def _scroll_to_bottom(self) -> None:
-        await asyncio.sleep(0.1)
+    async def on_message_posted(self, event: MessagePosted) -> None:
+        chat_history = self.app.query_one(ChatHistory)
+        chat_history.add_message(event.message)
 
-        container = self.app.query_one(VerticalScroll)
-        container.scroll_end(animate=False, immediate=True)
+        await self._scroll_to_bottom()
 
     async def _handle_stream_event(self, message: AgentMessage) -> None:
         text_chunk = message.data.get("text", "")
@@ -121,8 +119,6 @@ class MessageBus:
         await self._scroll_to_bottom()
 
     async def _handle_tool_permission_request(self, message: AgentMessage) -> None:
-        from agent_chat_cli.components.user_input import UserInput
-
         log_json(
             {
                 "event": "showing_permission_prompt",
@@ -130,36 +126,24 @@ class MessageBus:
             }
         )
 
-        thinking_indicator = self.app.query_one(ThinkingIndicator)
-        thinking_indicator.is_thinking = False
-
-        permission_prompt = self.app.query_one(ToolPermissionPrompt)
-        permission_prompt.tool_name = message.data.get("tool_name", "")
-        permission_prompt.tool_input = message.data.get("tool_input", {})
-        permission_prompt.is_visible = True
-
-        user_input = self.app.query_one(UserInput)
-        user_input.display = False
+        self.app.ui_state.show_permission_prompt(
+            tool_name=message.data.get("tool_name", ""),
+            tool_input=message.data.get("tool_input", {}),
+        )
 
         await self._scroll_to_bottom()
 
     async def _handle_result(self) -> None:
-        # Check if there's a queued message (e.g., from custom permission response)
         if not self.app.agent_loop.query_queue.empty():
-            # Don't turn off thinking - there's more work to do
             return
 
-        thinking_indicator = self.app.query_one(ThinkingIndicator)
-        thinking_indicator.is_thinking = False
-
-        input_widget = self.app.query_one(TextArea)
-        input_widget.cursor_blink = True
+        self.app.ui_state.stop_thinking()
 
         self.current_agent_message = None
         self.current_response_text = ""
 
-    async def on_message_posted(self, event: MessagePosted) -> None:
-        chat_history = self.app.query_one(ChatHistory)
-        chat_history.add_message(event.message)
+    async def _scroll_to_bottom(self) -> None:
+        await asyncio.sleep(0.1)
 
-        await self._scroll_to_bottom()
+        container = self.app.query_one(VerticalScroll)
+        container.scroll_end(animate=False, immediate=True)
