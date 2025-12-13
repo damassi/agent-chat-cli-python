@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING
 
+from textual.widgets import TextArea
+
 from agent_chat_cli.utils.enums import ControlCommand
 from agent_chat_cli.components.chat_history import ChatHistory, MessagePosted
 from agent_chat_cli.components.messages import Message
@@ -22,8 +24,6 @@ class Actions:
         await self.app.agent_loop.query_queue.put(user_input)
 
     async def submit_user_message(self, message: str) -> None:
-        from textual.widgets import TextArea
-
         self.app.post_message(MessagePosted(Message.user(message)))
 
         thinking_indicator = self.app.query_one(ThinkingIndicator)
@@ -62,7 +62,6 @@ class Actions:
 
     async def respond_to_tool_permission(self, response: str) -> None:
         from agent_chat_cli.components.user_input import UserInput
-        from textual.widgets import TextArea
 
         log_json(
             {
