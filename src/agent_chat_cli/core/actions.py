@@ -20,9 +20,6 @@ class Actions:
     def quit(self) -> None:
         self.app.exit()
 
-    async def query(self, user_input: str) -> None:
-        await self.app.agent_loop.query_queue.put(user_input)
-
     async def submit_user_message(self, message: str) -> None:
         self.app.post_message(MessagePosted(Message.user(message)))
 
@@ -32,7 +29,7 @@ class Actions:
         input_widget = self.app.query_one(TextArea)
         input_widget.cursor_blink = False
 
-        await self.query(message)
+        await self._query(message)
 
     def post_system_message(self, message: str) -> None:
         self.app.post_message(MessagePosted(Message.system(message)))
@@ -89,6 +86,9 @@ class Actions:
         normalized = response.lower().strip()
         if normalized not in ["y", "yes", "allow", ""]:
             if normalized in ["n", "no", "deny"]:
-                await self.query("The user has denied the tool")
+                await self._query("The user has denied the tool")
             else:
                 await self.submit_user_message(response)
+
+    async def _query(self, user_input: str) -> None:
+        await self.app.agent_loop.query_queue.put(user_input)

@@ -46,11 +46,11 @@ class MessageBus:
             case AgentMessageType.RESULT:
                 await self._handle_result()
 
-    async def _scroll_to_bottom(self) -> None:
-        await asyncio.sleep(0.1)
+    async def on_message_posted(self, event: MessagePosted) -> None:
+        chat_history = self.app.query_one(ChatHistory)
+        chat_history.add_message(event.message)
 
-        container = self.app.query_one(VerticalScroll)
-        container.scroll_end(animate=False, immediate=True)
+        await self._scroll_to_bottom()
 
     async def _handle_stream_event(self, message: AgentMessage) -> None:
         text_chunk = message.data.get("text", "")
@@ -158,8 +158,8 @@ class MessageBus:
         self.current_agent_message = None
         self.current_response_text = ""
 
-    async def on_message_posted(self, event: MessagePosted) -> None:
-        chat_history = self.app.query_one(ChatHistory)
-        chat_history.add_message(event.message)
+    async def _scroll_to_bottom(self) -> None:
+        await asyncio.sleep(0.1)
 
-        await self._scroll_to_bottom()
+        container = self.app.query_one(VerticalScroll)
+        container.scroll_end(animate=False, immediate=True)
