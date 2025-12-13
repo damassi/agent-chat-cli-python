@@ -2,8 +2,9 @@ from typing import Any, TYPE_CHECKING
 
 from textual.widget import Widget
 from textual.app import ComposeResult
-from textual.widgets import Label, Input
+from textual.widgets import Label, TextArea
 from textual.reactive import reactive
+from textual.binding import Binding
 
 from agent_chat_cli.components.caret import Caret
 from agent_chat_cli.components.flex import Flex
@@ -20,6 +21,10 @@ class ToolPermissionPrompt(Widget):
     tool_name = reactive("")
     tool_input: dict[str, Any] = reactive({}, init=False)  # type: ignore[assignment]
 
+    BINDINGS = [
+        Binding("enter", "submit", "Submit", priority=True),
+    ]
+
     def __init__(self, actions: "Actions") -> None:
         super().__init__()
         self.actions = actions
@@ -32,14 +37,20 @@ class ToolPermissionPrompt(Widget):
 
         with Flex():
             yield Caret()
-            yield Input(placeholder="Yes", id="permission-input")
+            yield TextArea(
+                "",
+                show_line_numbers=False,
+                soft_wrap=True,
+                placeholder="Yes",
+                id="permission-input",
+            )
 
     def watch_is_visible(self, is_visible: bool) -> None:
         self.display = is_visible
 
         if is_visible:
-            input_widget = self.query_one("#permission-input", Input)
-            input_widget.value = ""
+            input_widget = self.query_one("#permission-input", TextArea)
+            input_widget.clear()
             input_widget.focus()
 
     def watch_tool_name(self, tool_name: str) -> None:
@@ -59,24 +70,25 @@ class ToolPermissionPrompt(Widget):
 
         tool_display_label.update(tool_display)
 
-    async def on_input_submitted(self, event: Input.Submitted) -> None:
-        raw_value = event.value
-        response = event.value.strip() or "yes"
+    async def action_submit(self) -> None:
+        input_widget = self.query_one("#permission-input", TextArea)
+        raw_value = input_widget.text
+        response = raw_value.strip() or "yes"
 
         log_json(
             {
                 "event": "permission_input_submitted",
                 "raw_value": raw_value,
-                "stripped_value": event.value.strip(),
+                "stripped_value": raw_value.strip(),
                 "final_response": response,
             }
         )
 
         await self.actions.respond_to_tool_permission(response)
 
-    async def on_input_blurred(self, event: Input.Blurred) -> None:
+    def on_descendant_blur(self) -> None:
         if self.is_visible:
-            input_widget = self.query_one("#permission-input", Input)
+            input_widget = self.query_one("#permission-input", TextArea)
             input_widget.focus()
 
     async def on_key(self, event) -> None:
@@ -86,7 +98,8 @@ class ToolPermissionPrompt(Widget):
             event.stop()
             event.prevent_default()
 
-            input_widget = self.query_one("#permission-input", Input)
-            input_widget.value = "no"
+            input_widget = self.query_one("#permission-input", TextArea)
+            input_widget.clear()
+            input_widget.insert("no")
 
-            await input_widget.action_submit()
+            await self.action_submit()

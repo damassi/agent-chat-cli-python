@@ -12,6 +12,7 @@ from agent_chat_cli.components.user_input import UserInput
 from agent_chat_cli.core.agent_loop import AgentLoop
 from agent_chat_cli.core.message_bus import MessageBus
 from agent_chat_cli.core.actions import Actions
+from agent_chat_cli.core.ui_state import UIState
 from agent_chat_cli.utils.logger import setup_logging
 
 from dotenv import load_dotenv
@@ -32,6 +33,7 @@ class AgentChatCLIApp(App):
     def __init__(self) -> None:
         super().__init__()
 
+        self.ui_state = UIState(app=self)
         self.message_bus = MessageBus(app=self)
         self.actions = Actions(app=self)
         self.agent_loop = AgentLoop(app=self)
