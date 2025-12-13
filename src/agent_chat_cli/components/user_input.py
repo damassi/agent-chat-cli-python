@@ -33,6 +33,13 @@ class UserInput(Widget):
         input_widget = self.query_one(TextArea)
         input_widget.focus()
 
+    async def on_key(self, event) -> None:
+        if event.key == "ctrl+j":
+            event.stop()
+            event.prevent_default()
+            input_widget = self.query_one(TextArea)
+            input_widget.insert("\n")
+
     async def action_submit(self) -> None:
         input_widget = self.query_one(TextArea)
         user_message = input_widget.text.strip()
