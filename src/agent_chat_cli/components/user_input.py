@@ -2,6 +2,7 @@ from textual.widget import Widget
 from textual.app import ComposeResult
 from textual.widgets import TextArea
 from textual.binding import Binding
+from textual.events import DescendantBlur
 
 from agent_chat_cli.components.caret import Caret
 from agent_chat_cli.components.flex import Flex
@@ -10,8 +11,6 @@ from agent_chat_cli.utils.enums import ControlCommand
 
 
 class UserInput(Widget):
-    first_boot = True
-
     BINDINGS = [
         Binding("enter", "submit", "Submit", priority=True),
     ]
@@ -32,6 +31,10 @@ class UserInput(Widget):
     def on_mount(self) -> None:
         input_widget = self.query_one(TextArea)
         input_widget.focus()
+
+    def on_descendant_blur(self, event: DescendantBlur) -> None:
+        if isinstance(event.widget, TextArea):
+            event.widget.focus(scroll_visible=False)
 
     async def on_key(self, event) -> None:
         if event.key == "ctrl+j":

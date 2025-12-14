@@ -139,3 +139,27 @@ class TestUIStatePermissionPrompt:
 
             assert prompt.is_visible is False
             assert user_input.display is True
+
+
+class TestUIStateInput:
+    async def test_focus_input(self, mock_agent_loop, mock_config):
+        app = AgentChatCLIApp()
+        async with app.run_test():
+            user_input = app.query_one(UserInput)
+            text_area = user_input.query_one(TextArea)
+            text_area.blur()
+
+            app.ui_state.focus_input()
+
+            assert text_area.has_focus is True
+
+    async def test_clear_input(self, mock_agent_loop, mock_config):
+        app = AgentChatCLIApp()
+        async with app.run_test():
+            user_input = app.query_one(UserInput)
+            text_area = user_input.query_one(TextArea)
+            text_area.insert("some text")
+
+            app.ui_state.clear_input()
+
+            assert text_area.text == ""
