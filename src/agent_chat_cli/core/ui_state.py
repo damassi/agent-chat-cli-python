@@ -4,6 +4,7 @@ from textual.widgets import TextArea
 
 from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
 from agent_chat_cli.components.tool_permission_prompt import ToolPermissionPrompt
+from agent_chat_cli.components.user_input import UserInput
 
 if TYPE_CHECKING:
     from agent_chat_cli.app import AgentChatCLIApp
@@ -39,8 +40,6 @@ class UIState:
     def show_permission_prompt(
         self, tool_name: str, tool_input: dict[str, Any]
     ) -> None:
-        from agent_chat_cli.components.user_input import UserInput
-
         thinking_indicator = self.app.query_one(ThinkingIndicator)
         thinking_indicator.is_thinking = False
 
@@ -53,13 +52,20 @@ class UIState:
         user_input.display = False
 
     def hide_permission_prompt(self) -> None:
-        from agent_chat_cli.components.user_input import UserInput
-
         permission_prompt = self.app.query_one(ToolPermissionPrompt)
         permission_prompt.is_visible = False
 
         user_input = self.app.query_one(UserInput)
         user_input.display = True
 
-        input_widget = self.app.query_one(TextArea)
+        self.focus_input()
+
+    def focus_input(self) -> None:
+        user_input = self.app.query_one(UserInput)
+        input_widget = user_input.query_one(TextArea)
         input_widget.focus()
+
+    def clear_input(self) -> None:
+        user_input = self.app.query_one(UserInput)
+        input_widget = user_input.query_one(TextArea)
+        input_widget.clear()
