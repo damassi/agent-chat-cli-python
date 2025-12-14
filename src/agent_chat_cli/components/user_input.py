@@ -14,7 +14,6 @@ from agent_chat_cli.utils.enums import Key
 class UserInput(Widget):
     BINDINGS = [
         Binding(Key.ENTER.value, "submit", "Submit", priority=True),
-        Binding(Key.ESCAPE.value, "hide_menu", "Hide Menu", priority=True),
     ]
 
     def __init__(self, actions: Actions) -> None:
@@ -54,28 +53,35 @@ class UserInput(Widget):
 
     async def on_key(self, event) -> None:
         if event.key == Key.CTRL_J.value:
-            event.stop()
-            event.prevent_default()
-            input_widget = self.query_one(TextArea)
-            input_widget.insert("\n")
+            self._insert_newline(event)
             return
 
         menu = self.query_one(SlashCommandMenu)
 
-        if menu.is_visible and event.key in (Key.BACKSPACE.value, Key.DELETE.value):
-            event.stop()
-            event.prevent_default()
-            menu.hide()
-            self.query_one(TextArea).focus()
-
-    def action_hide_menu(self) -> None:
-        menu = self.query_one(SlashCommandMenu)
-
         if menu.is_visible:
-            menu.hide()
-            input_widget = self.query_one(TextArea)
+            self._close_menu(event)
+
+    def _insert_newline(self, event) -> None:
+        event.stop()
+        event.prevent_default()
+        input_widget = self.query_one(TextArea)
+        input_widget.insert("\n")
+
+    def _close_menu(self, event) -> None:
+        if event.key not in (Key.ESCAPE.value, Key.BACKSPACE.value, Key.DELETE.value):
+            return
+
+        event.stop()
+        event.prevent_default()
+
+        menu = self.query_one(SlashCommandMenu)
+        menu.hide()
+
+        input_widget = self.query_one(TextArea)
+        input_widget.focus()
+
+        if event.key == Key.ESCAPE.value:
             input_widget.clear()
-            input_widget.focus()
 
     async def action_submit(self) -> None:
         menu = self.query_one(SlashCommandMenu)

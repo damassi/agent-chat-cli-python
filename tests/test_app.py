@@ -150,3 +150,14 @@ class TestInterruptBehavior:
             await app.actions.interrupt()
 
             assert app.ui_state.interrupting is False
+
+    async def test_escape_triggers_interrupt_when_menu_not_visible(
+        self, mock_agent_loop, mock_config
+    ):
+        app = AgentChatCLIApp()
+        async with app.run_test() as pilot:
+            app.ui_state.start_thinking()
+
+            await pilot.press("escape")
+
+            assert app.ui_state.interrupting is True
