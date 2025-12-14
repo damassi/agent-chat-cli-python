@@ -20,6 +20,7 @@ src/agent_chat_cli/
 │   ├── flex.py                # Horizontal flex container
 │   ├── header.py              # App header with MCP server status
 │   ├── messages.py            # Message data models and widgets
+│   ├── slash_command_menu.py  # Slash command menu with filtering
 │   ├── spacer.py              # Empty spacer widget
 │   ├── thinking_indicator.py  # "Agent is thinking" indicator
 │   ├── tool_permission_prompt.py  # Tool permission request UI
@@ -100,8 +101,15 @@ Manages the Claude Agent SDK client lifecycle:
 **UserInput** (`components/user_input.py`)
 Text input with:
 - Enter to submit
-- Ctrl+J for newlines (PR #10)
-- Control commands: `exit`, `clear`
+- Ctrl+J for newlines
+- `/` opens slash command menu
+
+**SlashCommandMenu** (`components/slash_command_menu.py`)
+Command menu triggered by `/`:
+- Fuzzy filtering as you type (text shows in input)
+- Commands: `/new`, `/clear`, `/exit`
+- Backspace removes filter chars; closes menu when empty
+- Escape closes and clears
 
 **ToolPermissionPrompt** (`components/tool_permission_prompt.py`)
 Modal prompt for tool permission requests:
