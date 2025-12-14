@@ -28,13 +28,25 @@ class UserInput(Widget):
                 show_line_numbers=False,
                 soft_wrap=True,
             )
-        yield SlashCommandMenu(actions=self.actions)
+        yield SlashCommandMenu(
+            actions=self.actions, on_filter_change=self._on_filter_change
+        )
+
+    def _on_filter_change(self, char: str) -> None:
+        text_area = self.query_one(TextArea)
+        if char == Key.BACKSPACE.value:
+            text_area.action_delete_left()
+        else:
+            text_area.insert(char)
 
     def on_mount(self) -> None:
         input_widget = self.query_one(TextArea)
         input_widget.focus()
 
     def on_descendant_blur(self, event: DescendantBlur) -> None:
+        if not self.display:
+            return
+
         menu = self.query_one(SlashCommandMenu)
 
         if isinstance(event.widget, TextArea) and not menu.is_visible:
@@ -68,20 +80,29 @@ class UserInput(Widget):
         input_widget.insert("\n")
 
     def _close_menu(self, event) -> None:
-        if event.key not in (Key.ESCAPE.value, Key.BACKSPACE.value, Key.DELETE.value):
-            return
-
-        event.stop()
-        event.prevent_default()
-
         menu = self.query_one(SlashCommandMenu)
-        menu.hide()
-
-        input_widget = self.query_one(TextArea)
-        input_widget.focus()
 
         if event.key == Key.ESCAPE.value:
+            event.stop()
+            event.prevent_default()
+            menu.hide()
+            input_widget = self.query_one(TextArea)
             input_widget.clear()
+            input_widget.focus()
+            return
+
+        if event.key in (Key.BACKSPACE.value, Key.DELETE.value):
+            if menu.filter_text:
+                menu.filter_text = menu.filter_text[:-1]
+                menu._refresh_options()
+                self.query_one(TextArea).action_delete_left()
+            else:
+                event.stop()
+                event.prevent_default()
+                menu.hide()
+                input_widget = self.query_one(TextArea)
+                input_widget.clear()
+                input_widget.focus()
 
     async def action_submit(self) -> None:
         menu = self.query_one(SlashCommandMenu)

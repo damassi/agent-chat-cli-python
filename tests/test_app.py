@@ -5,6 +5,7 @@ from pathlib import Path
 from textual.widgets import TextArea
 
 from agent_chat_cli.app import AgentChatCLIApp
+from agent_chat_cli.components.slash_command_menu import SlashCommandMenu
 from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
 from agent_chat_cli.components.tool_permission_prompt import ToolPermissionPrompt
 from agent_chat_cli.components.user_input import UserInput
@@ -161,3 +162,69 @@ class TestInterruptBehavior:
             await pilot.press("escape")
 
             assert app.ui_state.interrupting is True
+
+
+class TestSlashCommandMenuBehavior:
+    async def test_slash_opens_menu(self, mock_agent_loop, mock_config):
+        app = AgentChatCLIApp()
+        async with app.run_test() as pilot:
+            await pilot.press("/")
+
+            menu = app.query_one(SlashCommandMenu)
+            assert menu.is_visible is True
+
+    async def test_escape_closes_menu_and_clears_input(
+        self, mock_agent_loop, mock_config
+    ):
+        app = AgentChatCLIApp()
+        async with app.run_test() as pilot:
+            await pilot.press("/")
+            await pilot.press("c")
+            await pilot.press("escape")
+
+            menu = app.query_one(SlashCommandMenu)
+            text_area = app.query_one(UserInput).query_one(TextArea)
+
+            assert menu.is_visible is False
+            assert text_area.text == ""
+
+    async def test_typing_filters_menu_and_shows_in_textarea(
+        self, mock_agent_loop, mock_config
+    ):
+        app = AgentChatCLIApp()
+        async with app.run_test() as pilot:
+            await pilot.press("/")
+            await pilot.press("c", "l")
+
+            menu = app.query_one(SlashCommandMenu)
+            text_area = app.query_one(UserInput).query_one(TextArea)
+
+            assert menu.filter_text == "cl"
+            assert text_area.text == "cl"
+
+    async def test_backspace_removes_filter_character(
+        self, mock_agent_loop, mock_config
+    ):
+        app = AgentChatCLIApp()
+        async with app.run_test() as pilot:
+            await pilot.press("/")
+            await pilot.press("c", "l")
+            await pilot.press("backspace")
+
+            menu = app.query_one(SlashCommandMenu)
+            text_area = app.query_one(UserInput).query_one(TextArea)
+
+            assert menu.filter_text == "c"
+            assert text_area.text == "c"
+            assert menu.is_visible is True
+
+    async def test_backspace_on_empty_filter_closes_menu(
+        self, mock_agent_loop, mock_config
+    ):
+        app = AgentChatCLIApp()
+        async with app.run_test() as pilot:
+            await pilot.press("/")
+            await pilot.press("backspace")
+
+            menu = app.query_one(SlashCommandMenu)
+            assert menu.is_visible is False
