@@ -7,7 +7,7 @@ console:
 	uv run textual console -x SYSTEM -x EVENT -x DEBUG -x INFO
 
 dev:
-	uv run textual run --dev -c chat
+	LOG_LEVEL=NOTSET uv run textual run --dev -c chat
 
 lint:
 	uv run ruff check --fix src

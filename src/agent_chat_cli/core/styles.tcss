@@ -94,3 +94,20 @@ TextArea {
 .tool-message {
     padding-left: 2;
 }
+
+SlashCommandMenu {
+    height: auto;
+    max-height: 10;
+    display: none;
+}
+
+SlashCommandMenu.visible {
+    display: block;
+}
+
+SlashCommandMenu OptionList {
+    height: auto;
+    max-height: 10;
+    border: solid $primary;
+    background: $surface;
+}

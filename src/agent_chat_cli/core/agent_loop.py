@@ -72,6 +72,8 @@ class AgentLoop:
                 if user_input == ControlCommand.NEW_CONVERSATION:
                     await self.client.disconnect()
 
+                    self.session_id = None
+
                     mcp_servers = {
                         name: config.model_dump()
                         for name, config in self.available_servers.items()

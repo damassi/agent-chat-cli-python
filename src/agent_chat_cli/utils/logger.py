@@ -1,13 +1,16 @@
 import json
 import logging
+import os
 from typing import Any
 
 from textual.logging import TextualHandler
 
 
 def setup_logging():
+    level = os.getenv("LOG_LEVEL", "INFO").upper()
+
     logging.basicConfig(
-        level="NOTSET",
+        level=level,
         handlers=[TextualHandler()],
     )
 
