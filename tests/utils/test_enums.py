@@ -1,4 +1,9 @@
-from agent_chat_cli.utils.enums import AgentMessageType, ContentType, ControlCommand
+from agent_chat_cli.utils.enums import (
+    AgentMessageType,
+    ContentType,
+    ControlCommand,
+    Key,
+)
 
 
 class TestAgentMessageType:
@@ -27,3 +32,13 @@ class TestControlCommand:
         assert ControlCommand.NEW_CONVERSATION.value == "new_conversation"
         assert ControlCommand.EXIT.value == "exit"
         assert ControlCommand.CLEAR.value == "clear"
+
+
+class TestKey:
+    def test_all_keys_have_values(self):
+        assert Key.ENTER.value == "enter"
+        assert Key.ESCAPE.value == "escape"
+        assert Key.BACKSPACE.value == "backspace"
+        assert Key.DELETE.value == "delete"
+        assert Key.CTRL_J.value == "ctrl+j"
+        assert Key.SLASH.value == "/"

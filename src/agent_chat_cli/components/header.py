@@ -33,7 +33,7 @@ class Header(Widget):
         yield Spacer()
 
         yield Label(
-            "[dim]Type your message and press Enter. Type 'exit' to quit.[/dim]",
+            "[dim]Type your message and press Enter. Press / for commands.[/dim]",
             id="header-instructions",
             classes="header-instructions",
         )

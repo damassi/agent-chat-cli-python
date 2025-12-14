@@ -22,3 +22,12 @@ class ControlCommand(Enum):
     NEW_CONVERSATION = "new_conversation"
     EXIT = "exit"
     CLEAR = "clear"
+
+
+class Key(Enum):
+    ENTER = "enter"
+    ESCAPE = "escape"
+    BACKSPACE = "backspace"
+    DELETE = "delete"
+    CTRL_J = "ctrl+j"
+    SLASH = "/"

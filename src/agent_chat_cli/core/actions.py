@@ -37,13 +37,15 @@ class Actions:
         await self.app.agent_loop.client.interrupt()
         self.app.ui_state.stop_thinking()
 
-    async def new(self) -> None:
-        await self.app.agent_loop.query_queue.put(ControlCommand.NEW_CONVERSATION)
-
+    async def clear(self) -> None:
         chat_history = self.app.query_one(ChatHistory)
         await chat_history.remove_children()
 
         self.app.ui_state.stop_thinking()
+
+    async def new(self) -> None:
+        await self.app.agent_loop.query_queue.put(ControlCommand.NEW_CONVERSATION)
+        await self.clear()
 
     async def respond_to_tool_permission(self, response: str) -> None:
         log_json(

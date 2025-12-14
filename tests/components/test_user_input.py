@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 from textual.app import App, ComposeResult
 from textual.widgets import TextArea
 
+from agent_chat_cli.components.slash_command_menu import SlashCommandMenu
 from agent_chat_cli.components.user_input import UserInput
 
 
@@ -14,6 +15,7 @@ class UserInputApp(App):
         self.mock_actions.quit = MagicMock()
         self.mock_actions.interrupt = AsyncMock()
         self.mock_actions.new = AsyncMock()
+        self.mock_actions.clear = AsyncMock()
         self.mock_actions.submit_user_message = AsyncMock()
 
     def compose(self) -> ComposeResult:
@@ -52,33 +54,6 @@ class TestUserInputSubmit:
             assert text_area.text == ""
 
 
-class TestUserInputControlCommands:
-    @pytest.fixture
-    def app(self):
-        return UserInputApp()
-
-    async def test_exit_command_quits(self, app):
-        async with app.run_test() as pilot:
-            user_input = app.query_one(UserInput)
-            text_area = user_input.query_one(TextArea)
-            text_area.insert("exit")
-
-            await pilot.press("enter")
-
-            app.mock_actions.quit.assert_called_once()
-
-    async def test_clear_command_resets_conversation(self, app):
-        async with app.run_test() as pilot:
-            user_input = app.query_one(UserInput)
-            text_area = user_input.query_one(TextArea)
-            text_area.insert("clear")
-
-            await pilot.press("enter")
-
-            app.mock_actions.interrupt.assert_called_once()
-            app.mock_actions.new.assert_called_once()
-
-
 class TestUserInputNewlines:
     @pytest.fixture
     def app(self):
@@ -94,3 +69,47 @@ class TestUserInputNewlines:
             text_area.insert("line2")
 
             assert "line1\nline2" in text_area.text
+
+
+class TestUserInputSlashMenu:
+    @pytest.fixture
+    def app(self):
+        return UserInputApp()
+
+    async def test_slash_shows_menu(self, app):
+        async with app.run_test() as pilot:
+            user_input = app.query_one(UserInput)
+            text_area = user_input.query_one(TextArea)
+            menu = user_input.query_one(SlashCommandMenu)
+
+            await pilot.press("/")
+
+            assert menu.is_visible is True
+            assert text_area.text == ""
+
+    async def test_escape_hides_menu(self, app):
+        async with app.run_test() as pilot:
+            user_input = app.query_one(UserInput)
+            menu = user_input.query_one(SlashCommandMenu)
+
+            await pilot.press("/")
+            await pilot.press("escape")
+
+            assert menu.is_visible is False
+
+    async def test_backspace_hides_menu(self, app):
+        async with app.run_test() as pilot:
+            user_input = app.query_one(UserInput)
+            menu = user_input.query_one(SlashCommandMenu)
+
+            await pilot.press("/")
+            await pilot.press("backspace")
+
+            assert menu.is_visible is False
+
+    async def test_enter_selects_menu_item(self, app):
+        async with app.run_test() as pilot:
+            await pilot.press("/")
+            await pilot.press("enter")
+
+            app.mock_actions.new.assert_called_once()

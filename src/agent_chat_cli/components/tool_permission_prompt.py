@@ -10,6 +10,7 @@ from agent_chat_cli.components.caret import Caret
 from agent_chat_cli.components.flex import Flex
 from agent_chat_cli.components.spacer import Spacer
 from agent_chat_cli.utils import get_tool_info
+from agent_chat_cli.utils.enums import Key
 from agent_chat_cli.utils.logger import log_json
 
 if TYPE_CHECKING:
@@ -22,7 +23,7 @@ class ToolPermissionPrompt(Widget):
     tool_input: dict[str, Any] = reactive({}, init=False)  # type: ignore[assignment]
 
     BINDINGS = [
-        Binding("enter", "submit", "Submit", priority=True),
+        Binding(Key.ENTER.value, "submit", "Submit", priority=True),
     ]
 
     def __init__(self, actions: "Actions") -> None:
@@ -92,7 +93,7 @@ class ToolPermissionPrompt(Widget):
             input_widget.focus()
 
     async def on_key(self, event) -> None:
-        if event.key == "escape":
+        if event.key == Key.ESCAPE.value:
             log_json({"event": "permission_escape_pressed"})
 
             event.stop()
