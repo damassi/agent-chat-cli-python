@@ -30,7 +30,7 @@ Manages the conversation loop with Claude SDK:
 - Uses `permission_lock` (asyncio.Lock) to serialize parallel permission requests
 - Manages `permission_response_queue` for user responses to tool permission prompts
 
-#### Message Bus (`system/message_bus.py`)
+#### Renderer (`core/renderer.py`)
 Routes agent messages to appropriate UI components:
 - Handles streaming text updates
 - Mounts tool use messages
@@ -82,7 +82,7 @@ Claude SDK (all enabled servers pre-connected at startup)
     ↓
 AgentLoop._handle_message
     ↓
-AgentMessage (typed message) → MessageBus.handle_agent_message
+AgentMessage (typed message) → Actions.render_message
     ↓
 Match on AgentMessageType:
     - STREAM_EVENT → Update streaming message widget
@@ -182,7 +182,7 @@ AgentLoop._can_use_tool (callback with permission_lock acquired)
     ↓
 Emit SYSTEM AgentMessage with tool_permission_request data
     ↓
-MessageBus._handle_system detects permission request
+Renderer._handle_tool_permission_request shows permission prompt
     ↓
 Show ToolPermissionPrompt, hide UserInput
     ↓
@@ -305,14 +305,14 @@ SDK reconnects to previous session with full history
 ### Agent Response Flow
 1. AgentLoop receives SDK message
 2. Parse into AgentMessage with AgentMessageType
-3. MessageBus.handle_agent_message (match/case on type)
+3. Actions.render_message → Renderer (match/case on type)
 4. Update UI components based on type
 5. Scroll to bottom
 
 ## Notes
 
 - Two distinct MessageType enums exist for different purposes (UI vs Agent events)
-- Message bus manages stateful streaming (tracks current_agent_message)
+- Renderer manages stateful streaming via StreamBuffer
 - Config loading combines multiple prompts into final system_prompt
 - Tool names follow format: `mcp__servername__toolname`
 - Actions class provides single interface for all user-initiated operations

@@ -1,7 +1,4 @@
-import asyncio
 from typing import TYPE_CHECKING
-
-from textual.containers import VerticalScroll
 
 from agent_chat_cli.utils.enums import ControlCommand
 from agent_chat_cli.components.chat_history import ChatHistory
@@ -33,23 +30,19 @@ class Actions:
 
         chat_history = self.app.query_one(ChatHistory)
         chat_history.add_message(message)
-        await self._scroll_to_bottom()
-
-    async def _scroll_to_bottom(self) -> None:
-        await asyncio.sleep(0.1)
-        container = self.app.query_one(VerticalScroll)
-        container.scroll_end(animate=False, immediate=True)
 
     async def submit_user_message(self, message: str) -> None:
-        await self.add_message_to_chat(MessageType.USER, message)
+        chat_history = self.app.query_one(ChatHistory)
+        chat_history.add_message(Message.user(message))
         self.app.ui_state.start_thinking()
+        await self.app.ui_state.scroll_to_bottom()
         await self._query(message)
 
     async def post_system_message(self, message: str) -> None:
         await self.add_message_to_chat(MessageType.SYSTEM, message)
 
-    async def handle_agent_message(self, message) -> None:
-        await self.app.message_bus.handle_agent_message(message)
+    async def render_message(self, message) -> None:
+        await self.app.renderer.render_message(message)
 
     async def interrupt(self) -> None:
         permission_prompt = self.app.query_one(ToolPermissionPrompt)

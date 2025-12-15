@@ -1,8 +1,7 @@
-import asyncio
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from textual.widgets import Markdown
-from textual.containers import VerticalScroll
 
 from agent_chat_cli.components.chat_history import ChatHistory
 from agent_chat_cli.components.messages import (
@@ -18,33 +17,45 @@ if TYPE_CHECKING:
     from agent_chat_cli.app import AgentChatCLIApp
 
 
-class MessageBus:
+@dataclass
+class StreamBuffer:
+    widget: AgentMessageWidget | None = None
+    text: str = ""
+
+    def reset(self) -> None:
+        self.widget = None
+        self.text = ""
+
+
+class Renderer:
     def __init__(self, app: "AgentChatCLIApp") -> None:
         self.app = app
-        self.current_agent_message: AgentMessageWidget | None = None
-        self.current_response_text = ""
+        self._stream = StreamBuffer()
 
-    async def handle_agent_message(self, message: AgentMessage) -> None:
+    async def render_message(self, message: AgentMessage) -> None:
         match message.type:
             case AgentMessageType.STREAM_EVENT:
-                await self._handle_stream_event(message)
+                await self._render_stream_event(message)
 
             case AgentMessageType.ASSISTANT:
-                await self._handle_assistant(message)
+                await self._render_assistant_message(message)
 
             case AgentMessageType.SYSTEM:
-                await self._handle_system(message)
+                await self._render_system_message(message)
 
             case AgentMessageType.USER:
-                await self._handle_user(message)
+                await self._render_user_message(message)
 
             case AgentMessageType.TOOL_PERMISSION_REQUEST:
-                await self._handle_tool_permission_request(message)
+                await self._render_tool_permission_request(message)
 
             case AgentMessageType.RESULT:
-                await self._handle_result()
+                await self._on_complete()
 
-    async def _handle_stream_event(self, message: AgentMessage) -> None:
+        if message.type is not AgentMessageType.RESULT:
+            await self.app.ui_state.scroll_to_bottom()
+
+    async def _render_stream_event(self, message: AgentMessage) -> None:
         text_chunk = message.data.get("text", "")
 
         if not text_chunk:
@@ -52,24 +63,21 @@ class MessageBus:
 
         chat_history = self.app.query_one(ChatHistory)
 
-        if self.current_agent_message is None:
-            self.current_response_text = text_chunk
+        if self._stream.widget is None:
+            self._stream.text = text_chunk
 
             agent_msg = AgentMessageWidget()
             agent_msg.message = text_chunk
 
-            # Append to chat history
-            chat_history.mount(agent_msg)
-            self.current_agent_message = agent_msg
+            await chat_history.mount(agent_msg)
+            self._stream.widget = agent_msg
         else:
-            self.current_response_text += text_chunk
+            self._stream.text += text_chunk
 
-            markdown = self.current_agent_message.query_one(Markdown)
-            markdown.update(self.current_response_text)
+            markdown = self._stream.widget.query_one(Markdown)
+            markdown.update(self._stream.text)
 
-        await self._scroll_to_bottom()
-
-    async def _handle_assistant(self, message: AgentMessage) -> None:
+    async def _render_assistant_message(self, message: AgentMessage) -> None:
         content_blocks = message.data.get("content", [])
         chat_history = self.app.query_one(ChatHistory)
 
@@ -77,9 +85,8 @@ class MessageBus:
             block_type = block.get("type")
 
             if block_type == ContentType.TOOL_USE.value:
-                if self.current_agent_message is not None:
-                    self.current_agent_message = None
-                    self.current_response_text = ""
+                if self._stream.widget is not None:
+                    self._stream.reset()
 
                 tool_name = block.get("name", "unknown")
                 tool_input = block.get("input", {})
@@ -88,24 +95,23 @@ class MessageBus:
                 tool_msg.tool_name = tool_name
                 tool_msg.tool_input = tool_input
 
-                # Append to chat history
-                chat_history.mount(tool_msg)
+                await chat_history.mount(tool_msg)
 
-                await self._scroll_to_bottom()
-
-    async def _handle_system(self, message: AgentMessage) -> None:
+    async def _render_system_message(self, message: AgentMessage) -> None:
         system_content = (
             message.data if isinstance(message.data, str) else str(message.data)
         )
+
         await self.app.actions.add_message_to_chat(MessageType.SYSTEM, system_content)
 
-    async def _handle_user(self, message: AgentMessage) -> None:
+    async def _render_user_message(self, message: AgentMessage) -> None:
         user_content = (
             message.data if isinstance(message.data, str) else str(message.data)
         )
+
         await self.app.actions.add_message_to_chat(MessageType.USER, user_content)
 
-    async def _handle_tool_permission_request(self, message: AgentMessage) -> None:
+    async def _render_tool_permission_request(self, message: AgentMessage) -> None:
         log_json(
             {
                 "event": "showing_permission_prompt",
@@ -118,19 +124,9 @@ class MessageBus:
             tool_input=message.data.get("tool_input", {}),
         )
 
-        await self._scroll_to_bottom()
-
-    async def _handle_result(self) -> None:
+    async def _on_complete(self) -> None:
         if not self.app.agent_loop.query_queue.empty():
             return
 
         self.app.ui_state.stop_thinking()
-
-        self.current_agent_message = None
-        self.current_response_text = ""
-
-    async def _scroll_to_bottom(self) -> None:
-        await asyncio.sleep(0.1)
-
-        container = self.app.query_one(VerticalScroll)
-        container.scroll_end(animate=False, immediate=True)
+        self._stream.reset()

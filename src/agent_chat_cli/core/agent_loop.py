@@ -92,7 +92,7 @@ class AgentLoop:
 
                 await self._handle_message(message)
 
-            await self.app.actions.handle_agent_message(
+            await self.app.actions.render_message(
                 AgentMessage(type=AgentMessageType.RESULT, data=None)
             )
 
@@ -135,7 +135,7 @@ class AgentLoop:
                     text_chunk = delta.get("text", "")
 
                     if text_chunk:
-                        await self.app.actions.handle_agent_message(
+                        await self.app.actions.render_message(
                             AgentMessage(
                                 type=AgentMessageType.STREAM_EVENT,
                                 data={"text": text_chunk},
@@ -163,7 +163,7 @@ class AgentLoop:
                         )
 
             # Finally, post the agent assistant response
-            await self.app.actions.handle_agent_message(
+            await self.app.actions.render_message(
                 AgentMessage(
                     type=AgentMessageType.ASSISTANT,
                     data={"content": content},
@@ -180,7 +180,7 @@ class AgentLoop:
 
         # Handle permission request queue sequentially
         async with self.permission_lock:
-            await self.app.actions.handle_agent_message(
+            await self.app.actions.render_message(
                 AgentMessage(
                     type=AgentMessageType.TOOL_PERMISSION_REQUEST,
                     data={
