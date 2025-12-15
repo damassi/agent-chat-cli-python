@@ -74,7 +74,7 @@ User Input
     ↓
 UserInput.on_input_submitted
     ↓
-MessagePosted event → ChatHistory (immediate UI update)
+Actions.add_message_to_chat → ChatHistory (immediate UI update)
     ↓
 Actions.query(user_input) → AgentLoop.query_queue.put()
     ↓
@@ -299,10 +299,8 @@ SDK reconnects to previous session with full history
 
 ### User Message Flow
 1. User submits text → UserInput
-2. MessagePosted event → App
-3. App → MessageBus.on_message_posted
-4. MessageBus → ChatHistory.add_message
-5. MessageBus → Scroll to bottom
+2. Actions.add_message_to_chat → ChatHistory.add_message
+3. Scroll to bottom
 
 ### Agent Response Flow
 1. AgentLoop receives SDK message

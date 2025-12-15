@@ -213,7 +213,7 @@ class AgentLoop:
                 )
 
             if rejected_tool:
-                self.app.actions.post_system_message(
+                await self.app.actions.post_system_message(
                     f"Permission denied for {tool_name}"
                 )
 

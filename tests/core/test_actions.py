@@ -3,6 +3,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from agent_chat_cli.app import AgentChatCLIApp
 from agent_chat_cli.components.chat_history import ChatHistory
+from agent_chat_cli.components.messages import (
+    MessageType,
+    SystemMessage,
+    UserMessage,
+    AgentMessage,
+)
 from agent_chat_cli.components.tool_permission_prompt import ToolPermissionPrompt
 from agent_chat_cli.utils.enums import ControlCommand
 
@@ -28,6 +34,90 @@ def mock_config():
     with patch("agent_chat_cli.components.header.load_config") as mock:
         mock.return_value = MagicMock(mcp_servers={}, agents={})
         yield mock
+
+
+class TestActionsAddMessageToChat:
+    async def test_adds_user_message(self, mock_agent_loop, mock_config):
+        app = AgentChatCLIApp()
+        async with app.run_test():
+            chat_history = app.query_one(ChatHistory)
+
+            await app.actions.add_message_to_chat(MessageType.USER, "Hello")
+
+            widgets = chat_history.query(UserMessage)
+            assert len(widgets) == 1
+            assert widgets.first().message == "Hello"
+
+    async def test_adds_system_message(self, mock_agent_loop, mock_config):
+        app = AgentChatCLIApp()
+        async with app.run_test():
+            chat_history = app.query_one(ChatHistory)
+
+            await app.actions.add_message_to_chat(MessageType.SYSTEM, "System alert")
+
+            widgets = chat_history.query(SystemMessage)
+            assert len(widgets) == 1
+            assert widgets.first().message == "System alert"
+
+    async def test_adds_agent_message(self, mock_agent_loop, mock_config):
+        app = AgentChatCLIApp()
+        async with app.run_test():
+            chat_history = app.query_one(ChatHistory)
+
+            await app.actions.add_message_to_chat(MessageType.AGENT, "I can help")
+
+            widgets = chat_history.query(AgentMessage)
+            assert len(widgets) == 1
+            assert widgets.first().message == "I can help"
+
+    async def test_raises_for_unsupported_type(self, mock_agent_loop, mock_config):
+        app = AgentChatCLIApp()
+        async with app.run_test():
+            with pytest.raises(ValueError, match="Unsupported message type"):
+                await app.actions.add_message_to_chat(MessageType.TOOL, "tool content")
+
+
+class TestActionsPostSystemMessage:
+    async def test_adds_system_message_to_chat(self, mock_agent_loop, mock_config):
+        app = AgentChatCLIApp()
+        async with app.run_test():
+            chat_history = app.query_one(ChatHistory)
+
+            await app.actions.post_system_message("Connection established")
+
+            widgets = chat_history.query(SystemMessage)
+            assert len(widgets) == 1
+            assert widgets.first().message == "Connection established"
+
+
+class TestActionsSubmitUserMessage:
+    async def test_adds_user_message_to_chat(self, mock_agent_loop, mock_config):
+        app = AgentChatCLIApp()
+        async with app.run_test():
+            chat_history = app.query_one(ChatHistory)
+
+            await app.actions.submit_user_message("Hello agent")
+
+            widgets = chat_history.query(UserMessage)
+            assert len(widgets) == 1
+            assert widgets.first().message == "Hello agent"
+
+    async def test_starts_thinking_indicator(self, mock_agent_loop, mock_config):
+        from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
+
+        app = AgentChatCLIApp()
+        async with app.run_test():
+            await app.actions.submit_user_message("Hello agent")
+
+            thinking_indicator = app.query_one(ThinkingIndicator)
+            assert thinking_indicator.is_thinking is True
+
+    async def test_queues_message_to_agent_loop(self, mock_agent_loop, mock_config):
+        app = AgentChatCLIApp()
+        async with app.run_test():
+            await app.actions.submit_user_message("Hello agent")
+
+            mock_agent_loop.query_queue.put.assert_called_with("Hello agent")
 
 
 class TestActionsInterrupt:

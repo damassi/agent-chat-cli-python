@@ -21,7 +21,7 @@ def mock_app():
     app.ui_state = MagicMock()
     app.actions = MagicMock()
     app.actions.handle_agent_message = AsyncMock()
-    app.actions.post_system_message = MagicMock()
+    app.actions.post_system_message = AsyncMock()
     return app
 
 

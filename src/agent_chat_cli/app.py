@@ -5,7 +5,7 @@ from textual.containers import VerticalScroll
 from textual.binding import Binding
 
 from agent_chat_cli.components.header import Header
-from agent_chat_cli.components.chat_history import ChatHistory, MessagePosted
+from agent_chat_cli.components.chat_history import ChatHistory
 from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
 from agent_chat_cli.components.tool_permission_prompt import ToolPermissionPrompt
 from agent_chat_cli.components.user_input import UserInput
@@ -48,9 +48,6 @@ class AgentChatCLIApp(App):
 
     async def on_mount(self) -> None:
         asyncio.create_task(self.agent_loop.start())
-
-    async def on_message_posted(self, event: MessagePosted) -> None:
-        await self.message_bus.on_message_posted(event)
 
     async def action_interrupt(self) -> None:
         await self.actions.interrupt()

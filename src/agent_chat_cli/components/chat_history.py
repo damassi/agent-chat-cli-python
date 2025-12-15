@@ -1,6 +1,5 @@
 import json
 from textual.containers import Container
-from textual.message import Message as TextualMessage
 
 from agent_chat_cli.components.messages import (
     AgentMessage,
@@ -48,9 +47,3 @@ class ChatHistory(Container):
                     tool_widget.tool_input = {"raw": message.content}
 
                 return tool_widget
-
-
-class MessagePosted(TextualMessage):
-    def __init__(self, message: Message) -> None:
-        self.message = message
-        super().__init__()

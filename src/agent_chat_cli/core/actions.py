@@ -1,8 +1,11 @@
+import asyncio
 from typing import TYPE_CHECKING
 
+from textual.containers import VerticalScroll
+
 from agent_chat_cli.utils.enums import ControlCommand
-from agent_chat_cli.components.chat_history import ChatHistory, MessagePosted
-from agent_chat_cli.components.messages import Message
+from agent_chat_cli.components.chat_history import ChatHistory
+from agent_chat_cli.components.messages import Message, MessageType
 from agent_chat_cli.components.tool_permission_prompt import ToolPermissionPrompt
 from agent_chat_cli.utils.logger import log_json
 
@@ -17,13 +20,33 @@ class Actions:
     def quit(self) -> None:
         self.app.exit()
 
+    async def add_message_to_chat(self, type: MessageType, content: str) -> None:
+        match type:
+            case MessageType.USER:
+                message = Message.user(content)
+            case MessageType.SYSTEM:
+                message = Message.system(content)
+            case MessageType.AGENT:
+                message = Message.agent(content)
+            case _:
+                raise ValueError(f"Unsupported message type: {type}")
+
+        chat_history = self.app.query_one(ChatHistory)
+        chat_history.add_message(message)
+        await self._scroll_to_bottom()
+
+    async def _scroll_to_bottom(self) -> None:
+        await asyncio.sleep(0.1)
+        container = self.app.query_one(VerticalScroll)
+        container.scroll_end(animate=False, immediate=True)
+
     async def submit_user_message(self, message: str) -> None:
-        self.app.post_message(MessagePosted(Message.user(message)))
+        await self.add_message_to_chat(MessageType.USER, message)
         self.app.ui_state.start_thinking()
         await self._query(message)
 
-    def post_system_message(self, message: str) -> None:
-        self.app.post_message(MessagePosted(Message.system(message)))
+    async def post_system_message(self, message: str) -> None:
+        await self.add_message_to_chat(MessageType.SYSTEM, message)
 
     async def handle_agent_message(self, message) -> None:
         await self.app.message_bus.handle_agent_message(message)

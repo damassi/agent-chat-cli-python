@@ -118,7 +118,7 @@ Modal prompt for tool permission requests:
 - Manages focus to prevent input elsewhere while visible
 
 **ChatHistory** (`components/chat_history.py`)
-Container for message widgets, handles `MessagePosted` events.
+Container for message widgets.
 
 **ThinkingIndicator** (`components/thinking_indicator.py`)
 Animated indicator shown during agent processing.

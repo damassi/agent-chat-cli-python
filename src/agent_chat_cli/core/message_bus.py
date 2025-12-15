@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING
 from textual.widgets import Markdown
 from textual.containers import VerticalScroll
 
-from agent_chat_cli.components.chat_history import ChatHistory, MessagePosted
+from agent_chat_cli.components.chat_history import ChatHistory
 from agent_chat_cli.components.messages import (
     AgentMessage as AgentMessageWidget,
-    Message,
+    MessageType,
     ToolMessage,
 )
 from agent_chat_cli.core.agent_loop import AgentMessage
@@ -43,12 +43,6 @@ class MessageBus:
 
             case AgentMessageType.RESULT:
                 await self._handle_result()
-
-    async def on_message_posted(self, event: MessagePosted) -> None:
-        chat_history = self.app.query_one(ChatHistory)
-        chat_history.add_message(event.message)
-
-        await self._scroll_to_bottom()
 
     async def _handle_stream_event(self, message: AgentMessage) -> None:
         text_chunk = message.data.get("text", "")
@@ -103,20 +97,13 @@ class MessageBus:
         system_content = (
             message.data if isinstance(message.data, str) else str(message.data)
         )
-
-        # Dispatch message
-        self.app.post_message(MessagePosted(Message.system(system_content)))
-
-        await self._scroll_to_bottom()
+        await self.app.actions.add_message_to_chat(MessageType.SYSTEM, system_content)
 
     async def _handle_user(self, message: AgentMessage) -> None:
         user_content = (
             message.data if isinstance(message.data, str) else str(message.data)
         )
-
-        self.app.post_message(MessagePosted(Message.user(user_content)))
-
-        await self._scroll_to_bottom()
+        await self.app.actions.add_message_to_chat(MessageType.USER, user_content)
 
     async def _handle_tool_permission_request(self, message: AgentMessage) -> None:
         log_json(
