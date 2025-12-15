@@ -1,5 +1,7 @@
+import asyncio
 from typing import TYPE_CHECKING, Any
 
+from textual.containers import VerticalScroll
 from textual.widgets import TextArea
 
 from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
@@ -69,3 +71,8 @@ class UIState:
         user_input = self.app.query_one(UserInput)
         input_widget = user_input.query_one(TextArea)
         input_widget.clear()
+
+    async def scroll_to_bottom(self) -> None:
+        await asyncio.sleep(0.1)
+        container = self.app.query_one(VerticalScroll)
+        container.scroll_end(animate=False, immediate=True)

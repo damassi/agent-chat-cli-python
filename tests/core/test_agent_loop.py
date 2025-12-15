@@ -20,8 +20,8 @@ def mock_app():
     app = MagicMock()
     app.ui_state = MagicMock()
     app.actions = MagicMock()
-    app.actions.handle_agent_message = AsyncMock()
-    app.actions.post_system_message = MagicMock()
+    app.actions.render_message = AsyncMock()
+    app.actions.post_system_message = AsyncMock()
     return app
 
 
@@ -152,8 +152,8 @@ class TestHandleMessageStreamEvent:
 
         await agent_loop._handle_message(message)
 
-        mock_app.actions.handle_agent_message.assert_called_once()
-        call_arg = mock_app.actions.handle_agent_message.call_args[0][0]
+        mock_app.actions.render_message.assert_called_once()
+        call_arg = mock_app.actions.render_message.call_args[0][0]
         assert call_arg.type == AgentMessageType.STREAM_EVENT
         assert call_arg.data == {"text": "Hello world"}
 
@@ -171,7 +171,7 @@ class TestHandleMessageStreamEvent:
 
         await agent_loop._handle_message(message)
 
-        mock_app.actions.handle_agent_message.assert_not_called()
+        mock_app.actions.render_message.assert_not_called()
 
 
 class TestHandleMessageAssistantMessage:
@@ -186,8 +186,8 @@ class TestHandleMessageAssistantMessage:
 
         await agent_loop._handle_message(message)
 
-        mock_app.actions.handle_agent_message.assert_called_once()
-        call_arg = mock_app.actions.handle_agent_message.call_args[0][0]
+        mock_app.actions.render_message.assert_called_once()
+        call_arg = mock_app.actions.render_message.call_args[0][0]
         assert call_arg.type == AgentMessageType.ASSISTANT
         assert call_arg.data["content"][0]["type"] == ContentType.TEXT.value
         assert call_arg.data["content"][0]["text"] == "Assistant response"
@@ -205,8 +205,8 @@ class TestHandleMessageAssistantMessage:
 
         await agent_loop._handle_message(message)
 
-        mock_app.actions.handle_agent_message.assert_called_once()
-        call_arg = mock_app.actions.handle_agent_message.call_args[0][0]
+        mock_app.actions.render_message.assert_called_once()
+        call_arg = mock_app.actions.render_message.call_args[0][0]
         assert call_arg.type == AgentMessageType.ASSISTANT
         assert call_arg.data["content"][0]["type"] == ContentType.TOOL_USE.value
         assert call_arg.data["content"][0]["name"] == "read_file"
@@ -278,7 +278,7 @@ class TestCanUseTool:
             _context=MagicMock(),
         )
 
-        mock_app.actions.handle_agent_message.assert_called_once()
-        call_arg = mock_app.actions.handle_agent_message.call_args[0][0]
+        mock_app.actions.render_message.assert_called_once()
+        call_arg = mock_app.actions.render_message.call_args[0][0]
         assert call_arg.type == AgentMessageType.TOOL_PERMISSION_REQUEST
         assert call_arg.data["tool_name"] == "write_file"

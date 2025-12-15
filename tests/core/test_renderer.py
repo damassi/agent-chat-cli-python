@@ -24,7 +24,7 @@ def mock_config():
         yield mock
 
 
-class TestMessageBusHandleAgentMessage:
+class TestRendererRenderMessage:
     async def test_handles_stream_event(self, mock_agent_loop, mock_config):
         app = AgentChatCLIApp()
         async with app.run_test():
@@ -33,23 +33,23 @@ class TestMessageBusHandleAgentMessage:
                 data={"text": "Hello"},
             )
 
-            await app.message_bus.handle_agent_message(message)
+            await app.renderer.render_message(message)
 
-            assert app.message_bus.current_response_text == "Hello"
+            assert app.renderer._stream.text == "Hello"
 
     async def test_accumulates_stream_chunks(self, mock_agent_loop, mock_config):
         app = AgentChatCLIApp()
         async with app.run_test():
-            await app.message_bus.handle_agent_message(
+            await app.renderer.render_message(
                 AgentMessage(
                     type=AgentMessageType.STREAM_EVENT, data={"text": "Hello "}
                 )
             )
-            await app.message_bus.handle_agent_message(
+            await app.renderer.render_message(
                 AgentMessage(type=AgentMessageType.STREAM_EVENT, data={"text": "world"})
             )
 
-            assert app.message_bus.current_response_text == "Hello world"
+            assert app.renderer._stream.text == "Hello world"
 
     async def test_handles_tool_permission_request(self, mock_agent_loop, mock_config):
         app = AgentChatCLIApp()
@@ -59,7 +59,7 @@ class TestMessageBusHandleAgentMessage:
                 data={"tool_name": "read_file", "tool_input": {"path": "/tmp"}},
             )
 
-            await app.message_bus.handle_agent_message(message)
+            await app.renderer.render_message(message)
 
             from agent_chat_cli.components.tool_permission_prompt import (
                 ToolPermissionPrompt,
@@ -72,16 +72,16 @@ class TestMessageBusHandleAgentMessage:
         app = AgentChatCLIApp()
         async with app.run_test():
             app.ui_state.start_thinking()
-            await app.message_bus.handle_agent_message(
+            await app.renderer.render_message(
                 AgentMessage(type=AgentMessageType.STREAM_EVENT, data={"text": "test"})
             )
 
-            await app.message_bus.handle_agent_message(
+            await app.renderer.render_message(
                 AgentMessage(type=AgentMessageType.RESULT, data=None)
             )
 
-            assert app.message_bus.current_agent_message is None
-            assert app.message_bus.current_response_text == ""
+            assert app.renderer._stream.widget is None
+            assert app.renderer._stream.text == ""
 
     async def test_handles_assistant_with_tool_use(self, mock_agent_loop, mock_config):
         app = AgentChatCLIApp()
@@ -99,16 +99,16 @@ class TestMessageBusHandleAgentMessage:
                 },
             )
 
-            await app.message_bus.handle_agent_message(message)
+            await app.renderer.render_message(message)
 
-            assert app.message_bus.current_agent_message is None
+            assert app.renderer._stream.widget is None
 
     async def test_ignores_empty_stream_chunks(self, mock_agent_loop, mock_config):
         app = AgentChatCLIApp()
         async with app.run_test():
-            await app.message_bus.handle_agent_message(
+            await app.renderer.render_message(
                 AgentMessage(type=AgentMessageType.STREAM_EVENT, data={"text": ""})
             )
 
-            assert app.message_bus.current_response_text == ""
-            assert app.message_bus.current_agent_message is None
+            assert app.renderer._stream.text == ""
+            assert app.renderer._stream.widget is None

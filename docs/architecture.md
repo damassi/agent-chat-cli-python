@@ -10,7 +10,7 @@ src/agent_chat_cli/
 ├── core/
 │   ├── actions.py             # User action handlers
 │   ├── agent_loop.py          # Claude Agent SDK client wrapper
-│   ├── message_bus.py         # Message routing from agent to UI
+│   ├── renderer.py              # Message routing from agent to UI
 │   ├── ui_state.py            # Centralized UI state management
 │   └── styles.tcss            # Textual CSS styles
 ├── components/
@@ -43,7 +43,7 @@ The application follows a loosely coupled architecture with four main orchestrat
 ┌─────────────────────────────────────────────────────────────┐
 │                     AgentChatCLIApp                         │
 │  ┌───────────┐  ┌───────────┐  ┌─────────┐  ┌───────────┐  │
-│  │  UIState  │  │MessageBus │  │ Actions │  │ AgentLoop │  │
+│  │  UIState  │  │  Renderer   │  │ Actions │  │ AgentLoop │  │
 │  └─────┬─────┘  └─────┬─────┘  └────┬────┘  └─────┬─────┘  │
 │        │              │             │              │        │
 │        └──────────────┴─────────────┴──────────────┘        │
@@ -63,9 +63,9 @@ Centralized management of UI state behaviors. Handles:
 - Tool permission prompt display/hide
 - Interrupt state tracking
 
-This class was introduced in PR #9 to consolidate scattered UI state logic from Actions and MessageBus into a single cohesive module.
+This class was introduced in PR #9 to consolidate scattered UI state logic from Actions and Renderer into a single cohesive module.
 
-**MessageBus** (`core/message_bus.py`)
+**Renderer** (`core/renderer.py`)
 Routes messages from the AgentLoop to appropriate UI components:
 - `STREAM_EVENT`: Streaming text chunks to AgentMessage widgets
 - `ASSISTANT`: Complete assistant responses with tool use blocks
@@ -92,7 +92,7 @@ Manages the Claude Agent SDK client lifecycle:
 1. User types in `UserInput` and presses Enter
 2. `Actions.submit_user_message()` posts to UI and enqueues to `AgentLoop.query_queue`
 3. `AgentLoop` sends query to Claude Agent SDK and streams responses
-4. Responses flow through `MessageBus.handle_agent_message()` to update UI
+4. Responses flow through `Actions.render_message()` to update UI
 5. Tool use triggers permission prompt via `UIState.show_permission_prompt()`
 6. User response flows back through `Actions.respond_to_tool_permission()`
 
@@ -118,7 +118,7 @@ Modal prompt for tool permission requests:
 - Manages focus to prevent input elsewhere while visible
 
 **ChatHistory** (`components/chat_history.py`)
-Container for message widgets, handles `MessagePosted` events.
+Container for message widgets.
 
 **ThinkingIndicator** (`components/thinking_indicator.py`)
 Animated indicator shown during agent processing.
