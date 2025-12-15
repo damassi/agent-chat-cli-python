@@ -17,7 +17,9 @@ class Actions:
     def quit(self) -> None:
         self.app.exit()
 
-    async def add_message_to_chat(self, type: MessageType, content: str) -> None:
+    async def add_message_to_chat_history(
+        self, type: MessageType, content: str
+    ) -> None:
         match type:
             case MessageType.USER:
                 message = Message.user(content)
@@ -39,7 +41,7 @@ class Actions:
         await self._query(message)
 
     async def post_system_message(self, message: str) -> None:
-        await self.add_message_to_chat(MessageType.SYSTEM, message)
+        await self.add_message_to_chat_history(MessageType.SYSTEM, message)
 
     async def render_message(self, message) -> None:
         await self.app.renderer.render_message(message)

@@ -42,7 +42,7 @@ class TestActionsAddMessageToChat:
         async with app.run_test():
             chat_history = app.query_one(ChatHistory)
 
-            await app.actions.add_message_to_chat(MessageType.USER, "Hello")
+            await app.actions.add_message_to_chat_history(MessageType.USER, "Hello")
 
             widgets = chat_history.query(UserMessage)
             assert len(widgets) == 1
@@ -53,7 +53,9 @@ class TestActionsAddMessageToChat:
         async with app.run_test():
             chat_history = app.query_one(ChatHistory)
 
-            await app.actions.add_message_to_chat(MessageType.SYSTEM, "System alert")
+            await app.actions.add_message_to_chat_history(
+                MessageType.SYSTEM, "System alert"
+            )
 
             widgets = chat_history.query(SystemMessage)
             assert len(widgets) == 1
@@ -64,7 +66,9 @@ class TestActionsAddMessageToChat:
         async with app.run_test():
             chat_history = app.query_one(ChatHistory)
 
-            await app.actions.add_message_to_chat(MessageType.AGENT, "I can help")
+            await app.actions.add_message_to_chat_history(
+                MessageType.AGENT, "I can help"
+            )
 
             widgets = chat_history.query(AgentMessage)
             assert len(widgets) == 1
@@ -74,7 +78,9 @@ class TestActionsAddMessageToChat:
         app = AgentChatCLIApp()
         async with app.run_test():
             with pytest.raises(ValueError, match="Unsupported message type"):
-                await app.actions.add_message_to_chat(MessageType.TOOL, "tool content")
+                await app.actions.add_message_to_chat_history(
+                    MessageType.TOOL, "tool content"
+                )
 
 
 class TestActionsPostSystemMessage:

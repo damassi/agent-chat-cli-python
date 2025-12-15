@@ -102,14 +102,18 @@ class Renderer:
             message.data if isinstance(message.data, str) else str(message.data)
         )
 
-        await self.app.actions.add_message_to_chat(MessageType.SYSTEM, system_content)
+        await self.app.actions.add_message_to_chat_history(
+            MessageType.SYSTEM, system_content
+        )
 
     async def _render_user_message(self, message: AgentMessage) -> None:
         user_content = (
             message.data if isinstance(message.data, str) else str(message.data)
         )
 
-        await self.app.actions.add_message_to_chat(MessageType.USER, user_content)
+        await self.app.actions.add_message_to_chat_history(
+            MessageType.USER, user_content
+        )
 
     async def _render_tool_permission_request(self, message: AgentMessage) -> None:
         log_json(
