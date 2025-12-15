@@ -33,10 +33,10 @@ class AgentChatCLIApp(App):
     def __init__(self) -> None:
         super().__init__()
 
-        self.ui_state = UIState(app=self)
-        self.renderer = Renderer(app=self)
         self.actions = Actions(app=self)
         self.agent_loop = AgentLoop(app=self)
+        self.renderer = Renderer(app=self)
+        self.ui_state = UIState(app=self)
 
     def compose(self) -> ComposeResult:
         with VerticalScroll():
