@@ -7,7 +7,6 @@ requires-python = ">=3.14"
 dependencies = [
     "asyncio>=4.0.0",
     "claude-agent-sdk>=0.1.10",
-    "mypy>=1.19.0",
     "pydantic>=2.12.5",
     "python-dotenv>=1.2.1",
     "pyyaml>=6.0.3",
@@ -17,14 +16,13 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "mypy>=1.19.0",
     "pre-commit>=4.3.0",
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
     "pytest-textual-snapshot>=1.0.0",
     "ruff>=0.14.7",
     "textual-dev>=1.8.0",
-    "types-pyyaml>=6.0.12.20250915",
+    "ty>=0.0.2",
 ]
 
 [project.scripts]

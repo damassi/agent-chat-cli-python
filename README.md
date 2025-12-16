@@ -38,7 +38,7 @@ Additional MCP servers are configured in `agent-chat-cli.config.yaml` and prompt
 
 - Install pre-commit hooks via [pre-commit](https://pre-commit.com/)
   - `uv run pre-commit install`
-- Type-checking is via [MyPy](https://github.com/python/mypy):
+- Type-checking is via [ty](https://github.com/astral-sh/ty):
   - `make type-check`
 - Linting and formatting is via [Ruff](https://docs.astral.sh/ruff/)
   - `make lint`

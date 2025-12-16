@@ -9,6 +9,7 @@ from claude_agent_sdk import (
 from claude_agent_sdk.types import (
     AssistantMessage,
     Message,
+    StreamEvent,
     SystemMessage,
     TextBlock,
     ToolUseBlock,
@@ -124,8 +125,8 @@ class AgentLoop:
                 MCPServerStatus.update(message.data["mcp_servers"])
 
         # Handle streaming messages
-        if hasattr(message, "event"):
-            event = message.event  # type: ignore[attr-defined]
+        if isinstance(message, StreamEvent):
+            event = message.event
 
             if event.get("type") == ContentType.CONTENT_BLOCK_DELTA.value:
                 delta = event.get("delta", {})
