@@ -33,7 +33,7 @@ jobs:
         run: uv sync --all-groups
 
       - name: Run type checker
-        run: uv run mypy src
+        run: uv run ty check src
 
   test:
     runs-on: ubuntu-latest

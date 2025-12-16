@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from claude_agent_sdk.types import (
     AssistantMessage,
+    StreamEvent,
     SystemMessage,
     TextBlock,
     ToolUseBlock,
@@ -141,14 +142,17 @@ class TestHandleMessageStreamEvent:
     async def test_handles_text_delta_stream_event(self, mock_app, mock_config):
         agent_loop = AgentLoop(app=mock_app)
 
-        message = MagicMock()
-        message.event = {
-            "type": ContentType.CONTENT_BLOCK_DELTA.value,
-            "delta": {
-                "type": ContentType.TEXT_DELTA.value,
-                "text": "Hello world",
+        message = StreamEvent(
+            uuid="test-uuid",
+            session_id="test-session",
+            event={
+                "type": ContentType.CONTENT_BLOCK_DELTA.value,
+                "delta": {
+                    "type": ContentType.TEXT_DELTA.value,
+                    "text": "Hello world",
+                },
             },
-        }
+        )
 
         await agent_loop._handle_message(message)
 
@@ -160,14 +164,17 @@ class TestHandleMessageStreamEvent:
     async def test_ignores_empty_text_delta(self, mock_app, mock_config):
         agent_loop = AgentLoop(app=mock_app)
 
-        message = MagicMock()
-        message.event = {
-            "type": ContentType.CONTENT_BLOCK_DELTA.value,
-            "delta": {
-                "type": ContentType.TEXT_DELTA.value,
-                "text": "",
+        message = StreamEvent(
+            uuid="test-uuid",
+            session_id="test-session",
+            event={
+                "type": ContentType.CONTENT_BLOCK_DELTA.value,
+                "delta": {
+                    "type": ContentType.TEXT_DELTA.value,
+                    "text": "",
+                },
             },
-        }
+        )
 
         await agent_loop._handle_message(message)
 
