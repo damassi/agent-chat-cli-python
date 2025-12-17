@@ -1,22 +1,20 @@
 from agent_chat_cli.utils.enums import (
-    AgentMessageType,
+    AppEventType,
     ContentType,
     ControlCommand,
     Key,
 )
 
 
-class TestAgentMessageType:
+class TestAppEventType:
     def test_all_message_types_have_values(self):
-        assert AgentMessageType.ASSISTANT.value == "assistant"
-        assert AgentMessageType.INIT.value == "init"
-        assert AgentMessageType.RESULT.value == "result"
-        assert AgentMessageType.STREAM_EVENT.value == "stream_event"
-        assert AgentMessageType.SYSTEM.value == "system"
-        assert (
-            AgentMessageType.TOOL_PERMISSION_REQUEST.value == "tool_permission_request"
-        )
-        assert AgentMessageType.USER.value == "user"
+        assert AppEventType.ASSISTANT.value == "assistant"
+        assert AppEventType.INIT.value == "init"
+        assert AppEventType.RESULT.value == "result"
+        assert AppEventType.STREAM_EVENT.value == "stream_event"
+        assert AppEventType.SYSTEM.value == "system"
+        assert AppEventType.TOOL_PERMISSION_REQUEST.value == "tool_permission_request"
+        assert AppEventType.USER.value == "user"
 
 
 class TestContentType:

@@ -24,7 +24,7 @@ from agent_chat_cli.utils.config import (
     get_available_servers,
     get_sdk_config,
 )
-from agent_chat_cli.utils.enums import AgentMessageType, ContentType, ControlCommand
+from agent_chat_cli.utils.enums import AppEventType, ContentType, ControlCommand
 from agent_chat_cli.utils.logger import log_json
 from agent_chat_cli.utils.mcp_server_status import MCPServerStatus
 
@@ -33,8 +33,8 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class AgentMessage:
-    type: AgentMessageType
+class AppEvent:
+    type: AppEventType
     data: Any
 
 
@@ -93,8 +93,8 @@ class AgentLoop:
 
                 await self._handle_message(message)
 
-            await self.app.actions.render_message(
-                AgentMessage(type=AgentMessageType.RESULT, data=None)
+            await self.app.actions.handle_app_event(
+                AppEvent(type=AppEventType.RESULT, data=None)
             )
 
     async def _initialize_client(self, mcp_servers: dict) -> None:
@@ -115,7 +115,7 @@ class AgentLoop:
         if isinstance(message, SystemMessage):
             log_json(message.data)
 
-            if message.subtype == AgentMessageType.INIT.value and message.data.get(
+            if message.subtype == AppEventType.INIT.value and message.data.get(
                 "session_id"
             ):
                 # When initializing the chat, we store the session_id for later
@@ -136,9 +136,9 @@ class AgentLoop:
                     text_chunk = delta.get("text", "")
 
                     if text_chunk:
-                        await self.app.actions.render_message(
-                            AgentMessage(
-                                type=AgentMessageType.STREAM_EVENT,
+                        await self.app.actions.handle_app_event(
+                            AppEvent(
+                                type=AppEventType.STREAM_EVENT,
                                 data={"text": text_chunk},
                             )
                         )
@@ -164,9 +164,9 @@ class AgentLoop:
                         )
 
             # Finally, post the agent assistant response
-            await self.app.actions.render_message(
-                AgentMessage(
-                    type=AgentMessageType.ASSISTANT,
+            await self.app.actions.handle_app_event(
+                AppEvent(
+                    type=AppEventType.ASSISTANT,
                     data={"content": content},
                 )
             )
@@ -181,9 +181,9 @@ class AgentLoop:
 
         # Handle permission request queue sequentially
         async with self.permission_lock:
-            await self.app.actions.render_message(
-                AgentMessage(
-                    type=AgentMessageType.TOOL_PERMISSION_REQUEST,
+            await self.app.actions.handle_app_event(
+                AppEvent(
+                    type=AppEventType.TOOL_PERMISSION_REQUEST,
                     data={
                         "tool_name": tool_name,
                         "tool_input": tool_input,

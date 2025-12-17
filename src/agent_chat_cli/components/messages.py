@@ -10,7 +10,7 @@ from rich.markup import escape
 from agent_chat_cli.utils import get_tool_info, format_tool_input
 
 
-class MessageType(Enum):
+class RoleType(Enum):
     SYSTEM = "system"
     USER = "user"
     AGENT = "agent"
@@ -19,26 +19,26 @@ class MessageType(Enum):
 
 @dataclass
 class Message:
-    type: MessageType
+    type: RoleType
     content: str
     metadata: dict[str, Any] | None = None
 
     @classmethod
     def system(cls, content: str) -> "Message":
-        return cls(type=MessageType.SYSTEM, content=content)
+        return cls(type=RoleType.SYSTEM, content=content)
 
     @classmethod
     def user(cls, content: str) -> "Message":
-        return cls(type=MessageType.USER, content=content)
+        return cls(type=RoleType.USER, content=content)
 
     @classmethod
     def agent(cls, content: str) -> "Message":
-        return cls(type=MessageType.AGENT, content=content)
+        return cls(type=RoleType.AGENT, content=content)
 
     @classmethod
     def tool(cls, tool_name: str, content: str) -> "Message":
         return cls(
-            type=MessageType.TOOL, content=content, metadata={"tool_name": tool_name}
+            type=RoleType.TOOL, content=content, metadata={"tool_name": tool_name}
         )
 
 

@@ -6,11 +6,12 @@ from textual.widgets import Markdown
 from agent_chat_cli.components.chat_history import ChatHistory
 from agent_chat_cli.components.messages import (
     AgentMessage as AgentMessageWidget,
-    MessageType,
+    Message,
+    RoleType,
     ToolMessage,
 )
-from agent_chat_cli.core.agent_loop import AgentMessage
-from agent_chat_cli.utils.enums import AgentMessageType, ContentType
+from agent_chat_cli.core.agent_loop import AppEvent
+from agent_chat_cli.utils.enums import AppEventType, ContentType
 from agent_chat_cli.utils.logger import log_json
 
 if TYPE_CHECKING:
@@ -32,31 +33,48 @@ class Renderer:
         self.app = app
         self._stream = StreamBuffer()
 
-    async def render_message(self, message: AgentMessage) -> None:
-        match message.type:
-            case AgentMessageType.STREAM_EVENT:
-                await self._render_stream_event(message)
+    async def handle_app_event(self, event: AppEvent) -> None:
+        match event.type:
+            case AppEventType.STREAM_EVENT:
+                await self._render_stream_event(event)
 
-            case AgentMessageType.ASSISTANT:
-                await self._render_assistant_message(message)
+            case AppEventType.ASSISTANT:
+                await self._render_assistant_message(event)
 
-            case AgentMessageType.SYSTEM:
-                await self._render_system_message(message)
+            case AppEventType.SYSTEM:
+                await self._render_system_message(event)
 
-            case AgentMessageType.USER:
-                await self._render_user_message(message)
+            case AppEventType.USER:
+                await self._render_user_message(event)
 
-            case AgentMessageType.TOOL_PERMISSION_REQUEST:
-                await self._render_tool_permission_request(message)
+            case AppEventType.TOOL_PERMISSION_REQUEST:
+                await self._render_tool_permission_request(event)
 
-            case AgentMessageType.RESULT:
+            case AppEventType.RESULT:
                 await self._on_complete()
 
-        if message.type is not AgentMessageType.RESULT:
+        if event.type is not AppEventType.RESULT:
             await self.app.ui_state.scroll_to_bottom()
 
-    async def _render_stream_event(self, message: AgentMessage) -> None:
-        text_chunk = message.data.get("text", "")
+    async def add_message(self, type: RoleType, content: str) -> None:
+        match type:
+            case RoleType.USER:
+                message = Message.user(content)
+            case RoleType.SYSTEM:
+                message = Message.system(content)
+            case RoleType.AGENT:
+                message = Message.agent(content)
+            case _:
+                raise ValueError(f"Unsupported message type: {type}")
+
+        chat_history = self.app.query_one(ChatHistory)
+        chat_history.add_message(message)
+
+        self.app.ui_state.start_thinking()
+        await self.app.ui_state.scroll_to_bottom()
+
+    async def _render_stream_event(self, event: AppEvent) -> None:
+        text_chunk = event.data.get("text", "")
 
         if not text_chunk:
             return
@@ -77,8 +95,8 @@ class Renderer:
             markdown = self._stream.widget.query_one(Markdown)
             markdown.update(self._stream.text)
 
-    async def _render_assistant_message(self, message: AgentMessage) -> None:
-        content_blocks = message.data.get("content", [])
+    async def _render_assistant_message(self, event: AppEvent) -> None:
+        content_blocks = event.data.get("content", [])
         chat_history = self.app.query_one(ChatHistory)
 
         for block in content_blocks:
@@ -97,35 +115,27 @@ class Renderer:
 
                 await chat_history.mount(tool_msg)
 
-    async def _render_system_message(self, message: AgentMessage) -> None:
-        system_content = (
-            message.data if isinstance(message.data, str) else str(message.data)
-        )
+    async def _render_system_message(self, event: AppEvent) -> None:
+        system_content = event.data if isinstance(event.data, str) else str(event.data)
 
-        await self.app.actions.add_message_to_chat_history(
-            MessageType.SYSTEM, system_content
-        )
+        await self.add_message(RoleType.SYSTEM, system_content)
 
-    async def _render_user_message(self, message: AgentMessage) -> None:
-        user_content = (
-            message.data if isinstance(message.data, str) else str(message.data)
-        )
+    async def _render_user_message(self, event: AppEvent) -> None:
+        user_content = event.data if isinstance(event.data, str) else str(event.data)
 
-        await self.app.actions.add_message_to_chat_history(
-            MessageType.USER, user_content
-        )
+        await self.add_message(RoleType.USER, user_content)
 
-    async def _render_tool_permission_request(self, message: AgentMessage) -> None:
+    async def _render_tool_permission_request(self, event: AppEvent) -> None:
         log_json(
             {
                 "event": "showing_permission_prompt",
-                "tool_name": message.data.get("tool_name", ""),
+                "tool_name": event.data.get("tool_name", ""),
             }
         )
 
         self.app.ui_state.show_permission_prompt(
-            tool_name=message.data.get("tool_name", ""),
-            tool_input=message.data.get("tool_input", {}),
+            tool_name=event.data.get("tool_name", ""),
+            tool_input=event.data.get("tool_input", {}),
         )
 
     async def _on_complete(self) -> None:

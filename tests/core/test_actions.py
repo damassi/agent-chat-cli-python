@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from agent_chat_cli.app import AgentChatCLIApp
 from agent_chat_cli.components.chat_history import ChatHistory
 from agent_chat_cli.components.messages import (
-    MessageType,
+    RoleType,
     SystemMessage,
     UserMessage,
     AgentMessage,
@@ -42,7 +42,7 @@ class TestActionsAddMessageToChat:
         async with app.run_test():
             chat_history = app.query_one(ChatHistory)
 
-            await app.actions.add_message_to_chat_history(MessageType.USER, "Hello")
+            await app.renderer.add_message(RoleType.USER, "Hello")
 
             widgets = chat_history.query(UserMessage)
             assert len(widgets) == 1
@@ -53,9 +53,7 @@ class TestActionsAddMessageToChat:
         async with app.run_test():
             chat_history = app.query_one(ChatHistory)
 
-            await app.actions.add_message_to_chat_history(
-                MessageType.SYSTEM, "System alert"
-            )
+            await app.renderer.add_message(RoleType.SYSTEM, "System alert")
 
             widgets = chat_history.query(SystemMessage)
             assert len(widgets) == 1
@@ -66,9 +64,7 @@ class TestActionsAddMessageToChat:
         async with app.run_test():
             chat_history = app.query_one(ChatHistory)
 
-            await app.actions.add_message_to_chat_history(
-                MessageType.AGENT, "I can help"
-            )
+            await app.renderer.add_message(RoleType.AGENT, "I can help")
 
             widgets = chat_history.query(AgentMessage)
             assert len(widgets) == 1
@@ -78,9 +74,7 @@ class TestActionsAddMessageToChat:
         app = AgentChatCLIApp()
         async with app.run_test():
             with pytest.raises(ValueError, match="Unsupported message type"):
-                await app.actions.add_message_to_chat_history(
-                    MessageType.TOOL, "tool content"
-                )
+                await app.renderer.add_message(RoleType.TOOL, "tool content")
 
 
 class TestActionsPostSystemMessage:

@@ -24,7 +24,7 @@ Manages the conversation loop with Claude SDK:
 - Maintains async queue for user queries
 - Handles streaming responses
 - Parses SDK messages into structured AgentMessage objects
-- Emits AgentMessageType events (STREAM_EVENT, ASSISTANT, RESULT)
+- Emits AppEventType events (STREAM_EVENT, ASSISTANT, RESULT)
 - Manages session persistence via session_id
 - Implements `_can_use_tool` callback for interactive tool permission requests
 - Uses `permission_lock` (asyncio.Lock) to serialize parallel permission requests
@@ -82,9 +82,9 @@ Claude SDK (all enabled servers pre-connected at startup)
     ↓
 AgentLoop._handle_message
     ↓
-AgentMessage (typed message) → Actions.render_message
+AppEvent (typed message) → Actions.handle_app_event
     ↓
-Match on AgentMessageType:
+Match on AppEventType:
     - STREAM_EVENT → Update streaming message widget
     - ASSISTANT → Mount tool use widgets
     - SYSTEM → Display system notification
@@ -109,7 +109,7 @@ AgentLoop internals:
 
 ### Enums (`utils/enums.py`)
 
-**AgentMessageType**: Agent communication events
+**AppEventType**: Agent communication events
 - ASSISTANT: Assistant message with content blocks
 - STREAM_EVENT: Streaming text chunk
 - RESULT: Response complete
@@ -126,16 +126,16 @@ AgentLoop internals:
 - EXIT: User command to quit application
 - CLEAR: User command to start new conversation
 
-**MessageType** (`components/messages.py`): UI message types
+**RoleType** (`components/messages.py`): UI message role types
 - SYSTEM, USER, AGENT, TOOL
 
 ### Data Classes
 
-**AgentMessage** (`utils/agent_loop.py`): Structured message from agent loop
+**AppEvent** (`utils/agent_loop.py`): Structured message from agent loop
 ```python
 @dataclass
-class AgentMessage:
-    type: AgentMessageType
+class AppEvent:
+    type: AppEventType
     data: Any
 ```
 
@@ -143,7 +143,7 @@ class AgentMessage:
 ```python
 @dataclass
 class Message:
-    type: MessageType
+    type: RoleType
     content: str
     metadata: dict[str, Any] | None = None
 ```
@@ -180,7 +180,7 @@ Tool Execution Request (from Claude SDK)
     ↓
 AgentLoop._can_use_tool (callback with permission_lock acquired)
     ↓
-Emit SYSTEM AgentMessage with tool_permission_request data
+Emit SYSTEM AppEvent with tool_permission_request data
     ↓
 Renderer._handle_tool_permission_request shows permission prompt
     ↓
@@ -304,14 +304,14 @@ SDK reconnects to previous session with full history
 
 ### Agent Response Flow
 1. AgentLoop receives SDK message
-2. Parse into AgentMessage with AgentMessageType
-3. Actions.render_message → Renderer (match/case on type)
+2. Parse into AppEvent with AppEventType
+3. Actions.handle_app_event → Renderer (match/case on type)
 4. Update UI components based on type
 5. Scroll to bottom
 
 ## Notes
 
-- Two distinct MessageType enums exist for different purposes (UI vs Agent events)
+- Two distinct type enums exist: RoleType for UI message roles (USER, AGENT, SYSTEM) and AppEventType for agent events (STREAM_EVENT, ASSISTANT, etc.)
 - Renderer manages stateful streaming via StreamBuffer
 - Config loading combines multiple prompts into final system_prompt
 - Tool names follow format: `mcp__servername__toolname`

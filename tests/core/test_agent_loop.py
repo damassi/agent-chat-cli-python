@@ -12,7 +12,7 @@ from claude_agent_sdk.types import (
 )
 
 from agent_chat_cli.core.agent_loop import AgentLoop
-from agent_chat_cli.utils.enums import AgentMessageType, ContentType, ControlCommand
+from agent_chat_cli.utils.enums import AppEventType, ContentType, ControlCommand
 from agent_chat_cli.utils.mcp_server_status import MCPServerStatus
 
 
@@ -21,7 +21,7 @@ def mock_app():
     app = MagicMock()
     app.ui_state = MagicMock()
     app.actions = MagicMock()
-    app.actions.render_message = AsyncMock()
+    app.actions.handle_app_event = AsyncMock()
     app.actions.post_system_message = AsyncMock()
     return app
 
@@ -111,7 +111,7 @@ class TestHandleMessageSystemMessage:
         agent_loop.session_id = None
 
         message = MagicMock(spec=SystemMessage)
-        message.subtype = AgentMessageType.INIT.value
+        message.subtype = AppEventType.INIT.value
         message.data = {
             "session_id": "new-session-456",
             "mcp_servers": [],
@@ -127,7 +127,7 @@ class TestHandleMessageSystemMessage:
         agent_loop = AgentLoop(app=mock_app)
 
         message = MagicMock(spec=SystemMessage)
-        message.subtype = AgentMessageType.INIT.value
+        message.subtype = AppEventType.INIT.value
         message.data = {
             "session_id": "session-123",
             "mcp_servers": [{"name": "filesystem", "status": "connected"}],
@@ -156,9 +156,9 @@ class TestHandleMessageStreamEvent:
 
         await agent_loop._handle_message(message)
 
-        mock_app.actions.render_message.assert_called_once()
-        call_arg = mock_app.actions.render_message.call_args[0][0]
-        assert call_arg.type == AgentMessageType.STREAM_EVENT
+        mock_app.actions.handle_app_event.assert_called_once()
+        call_arg = mock_app.actions.handle_app_event.call_args[0][0]
+        assert call_arg.type == AppEventType.STREAM_EVENT
         assert call_arg.data == {"text": "Hello world"}
 
     async def test_ignores_empty_text_delta(self, mock_app, mock_config):
@@ -178,7 +178,7 @@ class TestHandleMessageStreamEvent:
 
         await agent_loop._handle_message(message)
 
-        mock_app.actions.render_message.assert_not_called()
+        mock_app.actions.handle_app_event.assert_not_called()
 
 
 class TestHandleMessageAssistantMessage:
@@ -193,9 +193,9 @@ class TestHandleMessageAssistantMessage:
 
         await agent_loop._handle_message(message)
 
-        mock_app.actions.render_message.assert_called_once()
-        call_arg = mock_app.actions.render_message.call_args[0][0]
-        assert call_arg.type == AgentMessageType.ASSISTANT
+        mock_app.actions.handle_app_event.assert_called_once()
+        call_arg = mock_app.actions.handle_app_event.call_args[0][0]
+        assert call_arg.type == AppEventType.ASSISTANT
         assert call_arg.data["content"][0]["type"] == ContentType.TEXT.value
         assert call_arg.data["content"][0]["text"] == "Assistant response"
 
@@ -212,9 +212,9 @@ class TestHandleMessageAssistantMessage:
 
         await agent_loop._handle_message(message)
 
-        mock_app.actions.render_message.assert_called_once()
-        call_arg = mock_app.actions.render_message.call_args[0][0]
-        assert call_arg.type == AgentMessageType.ASSISTANT
+        mock_app.actions.handle_app_event.assert_called_once()
+        call_arg = mock_app.actions.handle_app_event.call_args[0][0]
+        assert call_arg.type == AppEventType.ASSISTANT
         assert call_arg.data["content"][0]["type"] == ContentType.TOOL_USE.value
         assert call_arg.data["content"][0]["name"] == "read_file"
 
@@ -285,7 +285,7 @@ class TestCanUseTool:
             _context=MagicMock(),
         )
 
-        mock_app.actions.render_message.assert_called_once()
-        call_arg = mock_app.actions.render_message.call_args[0][0]
-        assert call_arg.type == AgentMessageType.TOOL_PERMISSION_REQUEST
+        mock_app.actions.handle_app_event.assert_called_once()
+        call_arg = mock_app.actions.handle_app_event.call_args[0][0]
+        assert call_arg.type == AppEventType.TOOL_PERMISSION_REQUEST
         assert call_arg.data["tool_name"] == "write_file"
