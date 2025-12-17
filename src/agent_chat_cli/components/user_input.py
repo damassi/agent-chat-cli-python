@@ -120,4 +120,4 @@ class UserInput(Widget):
             return
 
         input_widget.clear()
-        await self.actions.submit_user_message(user_message)
+        await self.actions.post_user_message(user_message)

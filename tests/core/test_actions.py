@@ -96,7 +96,7 @@ class TestActionsSubmitUserMessage:
         async with app.run_test():
             chat_history = app.query_one(ChatHistory)
 
-            await app.actions.submit_user_message("Hello agent")
+            await app.actions.post_user_message("Hello agent")
 
             widgets = chat_history.query(UserMessage)
             assert len(widgets) == 1
@@ -107,7 +107,7 @@ class TestActionsSubmitUserMessage:
 
         app = AgentChatCLIApp()
         async with app.run_test():
-            await app.actions.submit_user_message("Hello agent")
+            await app.actions.post_user_message("Hello agent")
 
             thinking_indicator = app.query_one(ThinkingIndicator)
             assert thinking_indicator.is_thinking is True
@@ -115,7 +115,7 @@ class TestActionsSubmitUserMessage:
     async def test_queues_message_to_agent_loop(self, mock_agent_loop, mock_config):
         app = AgentChatCLIApp()
         async with app.run_test():
-            await app.actions.submit_user_message("Hello agent")
+            await app.actions.post_user_message("Hello agent")
 
             mock_agent_loop.query_queue.put.assert_called_with("Hello agent")
 

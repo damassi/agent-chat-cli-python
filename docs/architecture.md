@@ -75,7 +75,7 @@ Routes messages from the AgentLoop to appropriate UI components:
 
 **Actions** (`core/actions.py`)
 User-initiated action handlers:
-- `submit_user_message()`: Posts user message and queries agent
+- `post_user_message()`: Posts user message and queries agent
 - `interrupt()`: Cancels current agent operation
 - `new()`: Starts new conversation, clears history
 - `respond_to_tool_permission()`: Handles permission prompt responses
@@ -90,7 +90,7 @@ Manages the Claude Agent SDK client lifecycle:
 ### Message Flow
 
 1. User types in `UserInput` and presses Enter
-2. `Actions.submit_user_message()` posts to UI and enqueues to `AgentLoop.query_queue`
+2. `Actions.post_user_message()` posts to UI and enqueues to `AgentLoop.query_queue`
 3. `AgentLoop` sends query to Claude Agent SDK and streams responses
 4. Responses flow through `Actions.render_message()` to update UI
 5. Tool use triggers permission prompt via `UIState.show_permission_prompt()`

@@ -16,7 +16,7 @@ class UserInputApp(App):
         self.mock_actions.interrupt = AsyncMock()
         self.mock_actions.new = AsyncMock()
         self.mock_actions.clear = AsyncMock()
-        self.mock_actions.submit_user_message = AsyncMock()
+        self.mock_actions.post_user_message = AsyncMock()
 
     def compose(self) -> ComposeResult:
         yield UserInput(actions=self.mock_actions)
@@ -31,7 +31,7 @@ class TestUserInputSubmit:
         async with app.run_test() as pilot:
             await pilot.press("enter")
 
-            app.mock_actions.submit_user_message.assert_not_called()
+            app.mock_actions.post_user_message.assert_not_called()
 
     async def test_submits_message(self, app):
         async with app.run_test() as pilot:
@@ -41,7 +41,7 @@ class TestUserInputSubmit:
 
             await pilot.press("enter")
 
-            app.mock_actions.submit_user_message.assert_called_with("Hello agent")
+            app.mock_actions.post_user_message.assert_called_with("Hello agent")
 
     async def test_clears_input_after_submit(self, app):
         async with app.run_test() as pilot:

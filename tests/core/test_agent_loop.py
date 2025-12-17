@@ -272,7 +272,9 @@ class TestCanUseTool:
         )
 
         assert result.behavior == "deny"
-        assert result.message == "do something else instead"
+        assert (
+            hasattr(result, "message") and result.message == "do something else instead"
+        )
 
     async def test_posts_permission_request_message(self, mock_app, mock_config):
         agent_loop = AgentLoop(app=mock_app)

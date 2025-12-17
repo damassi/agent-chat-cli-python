@@ -73,6 +73,10 @@ class Renderer:
         self.app.ui_state.start_thinking()
         await self.app.ui_state.scroll_to_bottom()
 
+    async def reset_chat_history(self) -> None:
+        chat_history = self.app.query_one(ChatHistory)
+        await chat_history.remove_children()
+
     async def _render_stream_event(self, event: AppEvent) -> None:
         text_chunk = event.data.get("text", "")
 

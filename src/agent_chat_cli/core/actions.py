@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
 from agent_chat_cli.utils.enums import ControlCommand
-from agent_chat_cli.components.chat_history import ChatHistory
 from agent_chat_cli.components.messages import RoleType
 from agent_chat_cli.components.tool_permission_prompt import ToolPermissionPrompt
 from agent_chat_cli.utils.logger import log_json
@@ -17,7 +16,7 @@ class Actions:
     def quit(self) -> None:
         self.app.exit()
 
-    async def submit_user_message(self, message: str) -> None:
+    async def post_user_message(self, message: str) -> None:
         await self.app.renderer.add_message(RoleType.USER, message)
         await self._query(message)
 
@@ -32,14 +31,12 @@ class Actions:
         if permission_prompt.is_visible:
             return
 
+        self.app.ui_state.stop_thinking()
         self.app.ui_state.set_interrupting(True)
         await self.app.agent_loop.client.interrupt()
-        self.app.ui_state.stop_thinking()
 
     async def clear(self) -> None:
-        chat_history = self.app.query_one(ChatHistory)
-        await chat_history.remove_children()
-
+        await self.app.renderer.reset_chat_history()
         self.app.ui_state.stop_thinking()
 
     async def new(self) -> None:
@@ -64,7 +61,7 @@ class Actions:
             if normalized in ["n", "no", "deny"]:
                 await self._query("The user has denied the tool")
             else:
-                await self.submit_user_message(response)
+                await self.post_user_message(response)
 
     async def _query(self, user_input: str) -> None:
         await self.app.agent_loop.query_queue.put(user_input)
