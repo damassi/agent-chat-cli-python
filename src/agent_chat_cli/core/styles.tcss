@@ -10,7 +10,7 @@ MarkdownH6 {
 }
 
 Screen {
-    background: #222;
+    background: transparent;
 }
 
 Spacer {
@@ -21,6 +21,7 @@ Flex {
     layout: horizontal;
     width: 100%;
     height: auto;
+    background: transparent;
 }
 
 VerticalScroll {
@@ -76,7 +77,6 @@ Caret {
     height: 1;
     width: auto;
     margin-right: 1;
-    opacity: 0.5;
 }
 
 TextArea {
@@ -89,6 +89,19 @@ TextArea {
     color: white;
     padding: 0;
     margin: 0;
+}
+
+TextArea:focus {
+    background: transparent;
+}
+
+TextArea > * {
+    background: transparent;
+}
+
+TextArea .text-area--cursor {
+    background: white;
+    color: $text;
 }
 
 .tool-message {
@@ -110,4 +123,9 @@ SlashCommandMenu OptionList {
     max-height: 10;
     border: solid $primary;
     background: $surface;
+}
+
+
+.dim {
+    color: #888;
 }

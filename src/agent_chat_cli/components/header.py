@@ -2,6 +2,7 @@ from textual.app import ComposeResult
 from textual.widget import Widget
 from textual.widgets import Label
 
+from agent_chat_cli.components.flex import Flex
 from agent_chat_cli.components.spacer import Spacer
 from agent_chat_cli.utils.config import load_config
 from agent_chat_cli.utils.mcp_server_status import MCPServerStatus
@@ -18,24 +19,20 @@ class Header(Widget):
             "[bold]@ Agent CLI[/bold]",
         )
 
-        yield Label(
-            f"[dim]Available MCP Servers: {mcp_servers}[/dim]",
-            id="header-mcp-servers",
-        )
+        with Flex():
+            yield Label("Available MCP Servers:", classes="dim")
+            yield Label(f" {mcp_servers}", id="header-mcp-servers")
 
         if agents:
-            yield Label(
-                f"[dim]Agents:[/dim] {agents}",
-                id="header-agents",
-                classes="header-agents",
-            )
+            with Flex():
+                yield Label("Agents:", classes="dim")
+                yield Label(f" {agents}")
 
         yield Spacer()
 
         yield Label(
-            "[dim]Type your message and press Enter. Press / for commands.[/dim]",
-            id="header-instructions",
-            classes="header-instructions",
+            "Type your message and press Enter. Press / for commands.",
+            classes="dim",
         )
 
     def on_mount(self) -> None:
@@ -59,7 +56,6 @@ class Header(Widget):
                 server_parts.append(f"[#ffa2dc][strike]{name}[/strike][/]")
 
         mcp_servers = ", ".join(server_parts)
-        markup = f"[dim]Available MCP Servers:[/dim] {mcp_servers}"
 
         label = self.query_one("#header-mcp-servers", Label)
-        label.update(markup)
+        label.update(f" {mcp_servers}")

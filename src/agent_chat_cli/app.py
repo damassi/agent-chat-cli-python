@@ -31,7 +31,7 @@ class AgentChatCLIApp(App):
     ]
 
     def __init__(self) -> None:
-        super().__init__()
+        super().__init__(ansi_color=True)
 
         self.actions = Actions(app=self)
         self.agent_loop = AgentLoop(app=self)

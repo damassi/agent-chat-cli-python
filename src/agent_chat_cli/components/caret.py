@@ -5,4 +5,4 @@ from textual.app import ComposeResult
 
 class Caret(Widget):
     def compose(self) -> ComposeResult:
-        yield Label("▷")
+        yield Label("▷", classes="dim")

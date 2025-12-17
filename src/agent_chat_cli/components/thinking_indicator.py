@@ -13,7 +13,7 @@ class ThinkingIndicator(Widget):
     def compose(self) -> ComposeResult:
         with Flex():
             yield BalloonSpinner()
-            yield Label("[dim]Agent is thinking...[/dim]")
+            yield Label("Agent is thinking...", classes="dim")
 
     def on_mount(self) -> None:
         self.display = False
