@@ -32,7 +32,9 @@ class ToolPermissionPrompt(Widget):
 
     def compose(self) -> ComposeResult:
         yield Label("", id="tool-display")
-        yield Label("  [dim]Allow? (Enter=yes, ESC=no, or ask another question):[/dim]")
+        yield Label(
+            "  Allow? (Enter=yes, ESC=no, or ask another question):", classes="dim"
+        )
 
         yield Spacer()
 

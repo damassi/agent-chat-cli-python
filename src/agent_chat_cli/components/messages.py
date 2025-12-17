@@ -47,7 +47,7 @@ class SystemMessage(Widget):
 
     def compose(self) -> ComposeResult:
         yield Label("[bold][#debd00]System:[/][/bold]")
-        yield Label(f"[dim]{self.message}[/dim]")
+        yield Label(self.message, classes="dim")
 
 
 class UserMessage(Widget):
@@ -80,4 +80,4 @@ class ToolMessage(Widget):
             label = f"[#FFD281]{escape('[tool]')} {self.tool_name}[/]"
 
         yield Label(label)
-        yield Label(f"[dim]{formatted_input}[/dim]", classes="tool-message")
+        yield Label(formatted_input, classes="tool-message dim")
