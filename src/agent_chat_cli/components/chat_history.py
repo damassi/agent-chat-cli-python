@@ -4,7 +4,7 @@ from textual.containers import Container
 from agent_chat_cli.components.messages import (
     AgentMessage,
     Message,
-    MessageType,
+    RoleType,
     SystemMessage,
     ToolMessage,
     UserMessage,
@@ -20,22 +20,22 @@ class ChatHistory(Container):
         self, message: Message
     ) -> SystemMessage | UserMessage | AgentMessage | ToolMessage:
         match message.type:
-            case MessageType.SYSTEM:
+            case RoleType.SYSTEM:
                 system_widget = SystemMessage()
                 system_widget.message = message.content
                 return system_widget
 
-            case MessageType.USER:
+            case RoleType.USER:
                 user_widget = UserMessage()
                 user_widget.message = message.content
                 return user_widget
 
-            case MessageType.AGENT:
+            case RoleType.AGENT:
                 agent_widget = AgentMessage()
                 agent_widget.message = message.content
                 return agent_widget
 
-            case MessageType.TOOL:
+            case RoleType.TOOL:
                 tool_widget = ToolMessage()
 
                 if message.metadata and "tool_name" in message.metadata:

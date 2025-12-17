@@ -2,8 +2,8 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from agent_chat_cli.app import AgentChatCLIApp
-from agent_chat_cli.core.agent_loop import AgentMessage
-from agent_chat_cli.utils.enums import AgentMessageType, ContentType
+from agent_chat_cli.core.agent_loop import AppEvent
+from agent_chat_cli.utils.enums import AppEventType, ContentType
 
 
 @pytest.fixture
@@ -28,25 +28,23 @@ class TestRendererRenderMessage:
     async def test_handles_stream_event(self, mock_agent_loop, mock_config):
         app = AgentChatCLIApp()
         async with app.run_test():
-            message = AgentMessage(
-                type=AgentMessageType.STREAM_EVENT,
+            message = AppEvent(
+                type=AppEventType.STREAM_EVENT,
                 data={"text": "Hello"},
             )
 
-            await app.renderer.render_message(message)
+            await app.renderer.handle_app_event(message)
 
             assert app.renderer._stream.text == "Hello"
 
     async def test_accumulates_stream_chunks(self, mock_agent_loop, mock_config):
         app = AgentChatCLIApp()
         async with app.run_test():
-            await app.renderer.render_message(
-                AgentMessage(
-                    type=AgentMessageType.STREAM_EVENT, data={"text": "Hello "}
-                )
+            await app.renderer.handle_app_event(
+                AppEvent(type=AppEventType.STREAM_EVENT, data={"text": "Hello "})
             )
-            await app.renderer.render_message(
-                AgentMessage(type=AgentMessageType.STREAM_EVENT, data={"text": "world"})
+            await app.renderer.handle_app_event(
+                AppEvent(type=AppEventType.STREAM_EVENT, data={"text": "world"})
             )
 
             assert app.renderer._stream.text == "Hello world"
@@ -54,12 +52,12 @@ class TestRendererRenderMessage:
     async def test_handles_tool_permission_request(self, mock_agent_loop, mock_config):
         app = AgentChatCLIApp()
         async with app.run_test():
-            message = AgentMessage(
-                type=AgentMessageType.TOOL_PERMISSION_REQUEST,
+            message = AppEvent(
+                type=AppEventType.TOOL_PERMISSION_REQUEST,
                 data={"tool_name": "read_file", "tool_input": {"path": "/tmp"}},
             )
 
-            await app.renderer.render_message(message)
+            await app.renderer.handle_app_event(message)
 
             from agent_chat_cli.components.tool_permission_prompt import (
                 ToolPermissionPrompt,
@@ -72,12 +70,12 @@ class TestRendererRenderMessage:
         app = AgentChatCLIApp()
         async with app.run_test():
             app.ui_state.start_thinking()
-            await app.renderer.render_message(
-                AgentMessage(type=AgentMessageType.STREAM_EVENT, data={"text": "test"})
+            await app.renderer.handle_app_event(
+                AppEvent(type=AppEventType.STREAM_EVENT, data={"text": "test"})
             )
 
-            await app.renderer.render_message(
-                AgentMessage(type=AgentMessageType.RESULT, data=None)
+            await app.renderer.handle_app_event(
+                AppEvent(type=AppEventType.RESULT, data=None)
             )
 
             assert app.renderer._stream.widget is None
@@ -86,8 +84,8 @@ class TestRendererRenderMessage:
     async def test_handles_assistant_with_tool_use(self, mock_agent_loop, mock_config):
         app = AgentChatCLIApp()
         async with app.run_test():
-            message = AgentMessage(
-                type=AgentMessageType.ASSISTANT,
+            message = AppEvent(
+                type=AppEventType.ASSISTANT,
                 data={
                     "content": [
                         {
@@ -99,15 +97,15 @@ class TestRendererRenderMessage:
                 },
             )
 
-            await app.renderer.render_message(message)
+            await app.renderer.handle_app_event(message)
 
             assert app.renderer._stream.widget is None
 
     async def test_ignores_empty_stream_chunks(self, mock_agent_loop, mock_config):
         app = AgentChatCLIApp()
         async with app.run_test():
-            await app.renderer.render_message(
-                AgentMessage(type=AgentMessageType.STREAM_EVENT, data={"text": ""})
+            await app.renderer.handle_app_event(
+                AppEvent(type=AppEventType.STREAM_EVENT, data={"text": ""})
             )
 
             assert app.renderer._stream.text == ""
