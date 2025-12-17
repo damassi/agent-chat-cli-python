@@ -19,4 +19,4 @@ test:
 	uv run pytest
 
 type-check:
-	uv run ty check src
+	uv run ty check

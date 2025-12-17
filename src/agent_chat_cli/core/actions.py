@@ -23,7 +23,7 @@ class Actions:
     async def post_system_message(self, message: str) -> None:
         await self.app.renderer.add_message(RoleType.SYSTEM, message)
 
-    async def handle_app_event(self, event) -> None:
+    async def post_app_event(self, event) -> None:
         await self.app.renderer.handle_app_event(event)
 
     async def interrupt(self) -> None:
