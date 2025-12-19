@@ -10,6 +10,8 @@ from agent_chat_cli.components.messages import (
 )
 from agent_chat_cli.components.chat_history import ChatHistory
 
+CONVERSATION_OUTPUT_DIR = Path.home() / ".claude" / "agent-chat-cli"
+
 
 def save_conversation(chat_history: ChatHistory) -> str:
     messages = []
@@ -31,10 +33,9 @@ def save_conversation(chat_history: ChatHistory) -> str:
 
     content = "\n---\n\n".join(messages)
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    output_dir = Path.home() / ".claude" / "agent-chat-cli"
-    output_dir.mkdir(parents=True, exist_ok=True)
+    CONVERSATION_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    output_file = output_dir / f"convo-{timestamp}.md"
+    output_file = CONVERSATION_OUTPUT_DIR / f"convo-{timestamp}.md"
     output_file.write_text(content)
 
     return str(output_file)

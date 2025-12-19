@@ -20,6 +20,10 @@ class UserInput(Widget):
         super().__init__()
         self.actions = actions
 
+        self.message_history: list[str] = []
+        self.history_index: int | None = None
+        self.draft_message: str = ""
+
     def compose(self) -> ComposeResult:
         with Flex():
             yield Caret()
@@ -64,14 +68,23 @@ class UserInput(Widget):
             menu.show()
 
     async def on_key(self, event) -> None:
-        if event.key == Key.CTRL_J.value:
-            self._insert_newline(event)
-            return
-
         menu = self.query_one(SlashCommandMenu)
 
         if menu.is_visible:
             self._close_menu(event)
+            return
+
+        if event.key == "up":
+            await self._navigate_history(event, direction=-1)
+            return
+
+        if event.key == "down":
+            await self._navigate_history(event, direction=1)
+            return
+
+        if event.key == Key.CTRL_J.value:
+            self._insert_newline(event)
+            return
 
     def _insert_newline(self, event) -> None:
         event.stop()
@@ -104,6 +117,36 @@ class UserInput(Widget):
                 input_widget.clear()
                 input_widget.focus()
 
+    async def _navigate_history(self, event, direction: int) -> None:
+        event.stop()
+        event.prevent_default()
+
+        input_widget = self.query_one(TextArea)
+
+        if direction < 0:
+            if not self.message_history:
+                return
+
+            if self.history_index is None:
+                self.draft_message = input_widget.text
+                self.history_index = len(self.message_history) - 1
+            elif self.history_index > 0:
+                self.history_index -= 1
+        else:
+            if self.history_index is None:
+                return
+
+            self.history_index += 1
+
+            if self.history_index >= len(self.message_history):
+                self.history_index = None
+                input_widget.text = self.draft_message
+                input_widget.move_cursor_relative(rows=999, columns=999)
+                return
+
+        input_widget.text = self.message_history[self.history_index]
+        input_widget.move_cursor_relative(rows=999, columns=999)
+
     async def action_submit(self) -> None:
         menu = self.query_one(SlashCommandMenu)
 
@@ -120,6 +163,10 @@ class UserInput(Widget):
 
         if not user_message:
             return
+
+        self.message_history.append(user_message)
+        self.history_index = None
+        self.draft_message = ""
 
         input_widget.clear()
         await self.actions.post_user_message(user_message)

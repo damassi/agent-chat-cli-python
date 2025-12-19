@@ -131,3 +131,188 @@ class TestUserInputSlashMenu:
 
             assert text_area.text == ""
             app.mock_actions.save.assert_called_once()
+
+
+class TestUserInputHistory:
+    @pytest.fixture
+    def app(self):
+        return UserInputApp()
+
+    async def test_up_arrow_on_empty_history_does_nothing(self, app):
+        async with app.run_test() as pilot:
+            user_input = app.query_one(UserInput)
+            text_area = user_input.query_one(TextArea)
+
+            await pilot.press("up")
+
+            assert text_area.text == ""
+            assert user_input.history_index is None
+
+    async def test_up_arrow_loads_last_message(self, app):
+        async with app.run_test() as pilot:
+            user_input = app.query_one(UserInput)
+            text_area = user_input.query_one(TextArea)
+
+            text_area.insert("first message")
+            await pilot.press("enter")
+
+            await pilot.press("up")
+
+            assert text_area.text == "first message"
+            assert user_input.history_index == 0
+
+    async def test_up_arrow_twice_loads_older_messages(self, app):
+        async with app.run_test() as pilot:
+            user_input = app.query_one(UserInput)
+            text_area = user_input.query_one(TextArea)
+
+            text_area.insert("first message")
+            await pilot.press("enter")
+
+            text_area.insert("second message")
+            await pilot.press("enter")
+
+            await pilot.press("up")
+            assert text_area.text == "second message"
+            assert user_input.history_index == 1
+
+            await pilot.press("up")
+            assert text_area.text == "first message"
+            assert user_input.history_index == 0
+
+    async def test_up_arrow_at_oldest_does_nothing(self, app):
+        async with app.run_test() as pilot:
+            user_input = app.query_one(UserInput)
+            text_area = user_input.query_one(TextArea)
+
+            text_area.insert("only message")
+            await pilot.press("enter")
+
+            await pilot.press("up")
+            await pilot.press("up")
+
+            assert text_area.text == "only message"
+            assert user_input.history_index == 0
+
+    async def test_down_arrow_navigates_forward(self, app):
+        async with app.run_test() as pilot:
+            user_input = app.query_one(UserInput)
+            text_area = user_input.query_one(TextArea)
+
+            text_area.insert("first message")
+            await pilot.press("enter")
+
+            text_area.insert("second message")
+            await pilot.press("enter")
+
+            await pilot.press("up")
+            await pilot.press("up")
+            assert text_area.text == "first message"
+
+            await pilot.press("down")
+            assert text_area.text == "second message"
+            assert user_input.history_index == 1
+
+    async def test_down_arrow_at_present_does_nothing(self, app):
+        async with app.run_test() as pilot:
+            user_input = app.query_one(UserInput)
+            text_area = user_input.query_one(TextArea)
+
+            text_area.insert("test message")
+            await pilot.press("enter")
+
+            await pilot.press("down")
+
+            assert text_area.text == ""
+            assert user_input.history_index is None
+
+    async def test_down_arrow_from_history_restores_draft(self, app):
+        async with app.run_test() as pilot:
+            user_input = app.query_one(UserInput)
+            text_area = user_input.query_one(TextArea)
+
+            text_area.insert("first message")
+            await pilot.press("enter")
+
+            text_area.insert("my draft")
+            await pilot.press("up")
+            assert text_area.text == "first message"
+
+            await pilot.press("down")
+            assert text_area.text == "my draft"
+            assert user_input.history_index is None
+
+    async def test_empty_draft_preserved(self, app):
+        async with app.run_test() as pilot:
+            user_input = app.query_one(UserInput)
+            text_area = user_input.query_one(TextArea)
+
+            text_area.insert("first message")
+            await pilot.press("enter")
+
+            await pilot.press("up")
+            assert text_area.text == "first message"
+
+            await pilot.press("down")
+            assert text_area.text == ""
+            assert user_input.history_index is None
+
+    async def test_submit_adds_to_history(self, app):
+        async with app.run_test() as pilot:
+            user_input = app.query_one(UserInput)
+            text_area = user_input.query_one(TextArea)
+
+            text_area.insert("test message")
+            await pilot.press("enter")
+
+            assert len(user_input.message_history) == 1
+            assert user_input.message_history[0] == "test message"
+
+    async def test_submit_resets_history_state(self, app):
+        async with app.run_test() as pilot:
+            user_input = app.query_one(UserInput)
+            text_area = user_input.query_one(TextArea)
+
+            text_area.insert("first message")
+            await pilot.press("enter")
+
+            await pilot.press("up")
+            assert user_input.history_index == 0
+
+            text_area.clear()
+            text_area.insert("second message")
+            await pilot.press("enter")
+
+            assert user_input.history_index is None
+            assert user_input.draft_message == ""
+
+    async def test_multiline_message_in_history(self, app):
+        async with app.run_test() as pilot:
+            user_input = app.query_one(UserInput)
+            text_area = user_input.query_one(TextArea)
+
+            text_area.insert("line1")
+            await pilot.press("ctrl+j")
+            text_area.insert("line2")
+            await pilot.press("enter")
+
+            await pilot.press("up")
+
+            assert "line1\nline2" in text_area.text
+
+    async def test_history_with_slash_menu_open(self, app):
+        async with app.run_test() as pilot:
+            user_input = app.query_one(UserInput)
+            text_area = user_input.query_one(TextArea)
+            menu = user_input.query_one(SlashCommandMenu)
+
+            text_area.insert("test message")
+            await pilot.press("enter")
+
+            await pilot.press("/")
+            assert menu.is_visible is True
+
+            await pilot.press("up")
+
+            assert text_area.text == ""
+            assert user_input.history_index is None

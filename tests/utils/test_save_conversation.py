@@ -10,12 +10,13 @@ from agent_chat_cli.components.messages import (
     AgentMessage,
     ToolMessage,
 )
-from agent_chat_cli.utils.save_conversation import save_conversation
+from agent_chat_cli.utils import save_conversation
 
 
 class TestSaveConversation:
     async def test_saves_user_and_agent_messages(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        output_dir = tmp_path / ".claude" / "agent-chat-cli"
+        monkeypatch.setattr(save_conversation, "CONVERSATION_OUTPUT_DIR", output_dir)
 
         class TestApp(App):
             def compose(self) -> ComposeResult:
@@ -35,7 +36,7 @@ class TestSaveConversation:
             markdown_widget = agent_msg.query_one(Markdown)
             markdown_widget.update("Hi there!")
 
-            file_path = save_conversation(chat_history)
+            file_path = save_conversation.save_conversation(chat_history)
 
             assert Path(file_path).exists()
             content = Path(file_path).read_text()
@@ -45,7 +46,8 @@ class TestSaveConversation:
             assert "Hi there!" in content
 
     async def test_saves_system_messages(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        output_dir = tmp_path / ".claude" / "agent-chat-cli"
+        monkeypatch.setattr(save_conversation, "CONVERSATION_OUTPUT_DIR", output_dir)
 
         class TestApp(App):
             def compose(self) -> ComposeResult:
@@ -59,7 +61,7 @@ class TestSaveConversation:
             system_msg.message = "Connection established"
             await chat_history.mount(system_msg)
 
-            file_path = save_conversation(chat_history)
+            file_path = save_conversation.save_conversation(chat_history)
 
             assert Path(file_path).exists()
             content = Path(file_path).read_text()
@@ -67,7 +69,8 @@ class TestSaveConversation:
             assert "Connection established" in content
 
     async def test_saves_tool_messages(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        output_dir = tmp_path / ".claude" / "agent-chat-cli"
+        monkeypatch.setattr(save_conversation, "CONVERSATION_OUTPUT_DIR", output_dir)
 
         class TestApp(App):
             def compose(self) -> ComposeResult:
@@ -82,7 +85,7 @@ class TestSaveConversation:
             tool_msg.tool_input = {"url": "https://example.com"}
             await chat_history.mount(tool_msg)
 
-            file_path = save_conversation(chat_history)
+            file_path = save_conversation.save_conversation(chat_history)
 
             assert Path(file_path).exists()
             content = Path(file_path).read_text()
@@ -90,7 +93,8 @@ class TestSaveConversation:
             assert "https://example.com" in content
 
     async def test_creates_directory_structure(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        output_dir = tmp_path / ".claude" / "agent-chat-cli"
+        monkeypatch.setattr(save_conversation, "CONVERSATION_OUTPUT_DIR", output_dir)
 
         class TestApp(App):
             def compose(self) -> ComposeResult:
@@ -99,14 +103,15 @@ class TestSaveConversation:
         app = TestApp()
         async with app.run_test():
             chat_history = app.query_one(ChatHistory)
-            file_path = save_conversation(chat_history)
+            file_path = save_conversation.save_conversation(chat_history)
 
             output_dir = tmp_path / ".claude" / "agent-chat-cli"
             assert output_dir.exists()
             assert Path(file_path).parent == output_dir
 
     async def test_uses_timestamp_in_filename(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        output_dir = tmp_path / ".claude" / "agent-chat-cli"
+        monkeypatch.setattr(save_conversation, "CONVERSATION_OUTPUT_DIR", output_dir)
 
         class TestApp(App):
             def compose(self) -> ComposeResult:
@@ -115,7 +120,7 @@ class TestSaveConversation:
         app = TestApp()
         async with app.run_test():
             chat_history = app.query_one(ChatHistory)
-            file_path = save_conversation(chat_history)
+            file_path = save_conversation.save_conversation(chat_history)
 
             filename = Path(file_path).name
             assert filename.startswith("convo-")

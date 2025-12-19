@@ -1,5 +1,4 @@
 import pytest
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from agent_chat_cli.app import AgentChatCLIApp
@@ -12,6 +11,7 @@ from agent_chat_cli.components.messages import (
 )
 from agent_chat_cli.components.tool_permission_prompt import ToolPermissionPrompt
 from agent_chat_cli.utils.enums import ControlCommand
+from agent_chat_cli.utils import save_conversation
 
 
 @pytest.fixture
@@ -205,7 +205,8 @@ class TestActionsSave:
     async def test_saves_conversation_to_file(
         self, mock_agent_loop, mock_config, tmp_path, monkeypatch
     ):
-        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        output_dir = tmp_path / ".claude" / "agent-chat-cli"
+        monkeypatch.setattr(save_conversation, "CONVERSATION_OUTPUT_DIR", output_dir)
 
         app = AgentChatCLIApp()
         async with app.run_test():
@@ -221,7 +222,8 @@ class TestActionsSave:
     async def test_adds_system_message_with_file_path(
         self, mock_agent_loop, mock_config, tmp_path, monkeypatch
     ):
-        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        output_dir = tmp_path / ".claude" / "agent-chat-cli"
+        monkeypatch.setattr(save_conversation, "CONVERSATION_OUTPUT_DIR", output_dir)
 
         app = AgentChatCLIApp()
         async with app.run_test():
@@ -241,7 +243,8 @@ class TestActionsSave:
     ):
         from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
 
-        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        output_dir = tmp_path / ".claude" / "agent-chat-cli"
+        monkeypatch.setattr(save_conversation, "CONVERSATION_OUTPUT_DIR", output_dir)
 
         app = AgentChatCLIApp()
         async with app.run_test():
