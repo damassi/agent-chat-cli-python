@@ -103,13 +103,31 @@ Text input with:
 - Enter to submit
 - Ctrl+J for newlines
 - `/` opens slash command menu
+- Up/Down arrows to navigate message history (bash-like command history)
 
 **SlashCommandMenu** (`components/slash_command_menu.py`)
 Command menu triggered by `/`:
 - Fuzzy filtering as you type (text shows in input)
-- Commands: `/new`, `/clear`, `/exit`
+- Commands: `/new`, `/clear`, `/save`, `/exit`
 - Backspace removes filter chars; closes menu when empty
 - Escape closes and clears
+
+### Message History Navigation
+
+The UserInput component maintains a bash-like command history:
+- **Up arrow**: Navigate backward through previous messages
+- **Down arrow**: Navigate forward through history
+- **Draft preservation**: Current input is saved when navigating and restored when returning to present
+- History persists for the app session
+- Empty history is handled gracefully
+
+### Save Conversation
+
+The `/save` slash command saves the current conversation to a markdown file:
+- Output location: `~/.claude/agent-chat-cli/convo-{timestamp}.md`
+- Includes all message types: system, user, agent, and tool messages
+- Tool messages are formatted as JSON code blocks
+- Messages are separated by markdown horizontal rules
 
 **ToolPermissionPrompt** (`components/tool_permission_prompt.py`)
 Modal prompt for tool permission requests:
