@@ -1,4 +1,5 @@
 import pytest
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from agent_chat_cli.app import AgentChatCLIApp
@@ -198,3 +199,55 @@ class TestActionsRespondToToolPermission:
 
             calls = mock_agent_loop.query_queue.put.call_args_list
             assert any("denied" in str(call).lower() for call in calls)
+
+
+class TestActionsSave:
+    async def test_saves_conversation_to_file(
+        self, mock_agent_loop, mock_config, tmp_path, monkeypatch
+    ):
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+        app = AgentChatCLIApp()
+        async with app.run_test():
+            await app.actions.post_user_message("Hello")
+
+            await app.actions.save()
+
+            output_dir = tmp_path / ".claude" / "agent-chat-cli"
+            assert output_dir.exists()
+            files = list(output_dir.glob("convo-*.md"))
+            assert len(files) == 1
+
+    async def test_adds_system_message_with_file_path(
+        self, mock_agent_loop, mock_config, tmp_path, monkeypatch
+    ):
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+        app = AgentChatCLIApp()
+        async with app.run_test():
+            chat_history = app.query_one(ChatHistory)
+            initial_count = len(chat_history.children)
+
+            await app.actions.save()
+
+            system_messages = chat_history.query(SystemMessage)
+            assert len(system_messages) == initial_count + 1
+            last_message = system_messages.last()
+            assert "Conversation saved to" in last_message.message
+            assert ".claude/agent-chat-cli/convo-" in last_message.message
+
+    async def test_does_not_trigger_thinking(
+        self, mock_agent_loop, mock_config, tmp_path, monkeypatch
+    ):
+        from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
+
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+        app = AgentChatCLIApp()
+        async with app.run_test():
+            app.ui_state.stop_thinking()
+
+            await app.actions.save()
+
+            thinking_indicator = app.query_one(ThinkingIndicator)
+            assert thinking_indicator.is_thinking is False

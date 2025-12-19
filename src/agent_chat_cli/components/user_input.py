@@ -110,7 +110,9 @@ class UserInput(Widget):
         if menu.is_visible:
             option_list = menu.query_one(OptionList)
             option_list.action_select()
-            self.query_one(TextArea).focus()
+            input_widget = self.query_one(TextArea)
+            input_widget.clear()
+            input_widget.focus()
             return
 
         input_widget = self.query_one(TextArea)

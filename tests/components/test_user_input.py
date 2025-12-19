@@ -16,6 +16,7 @@ class UserInputApp(App):
         self.mock_actions.interrupt = AsyncMock()
         self.mock_actions.new = AsyncMock()
         self.mock_actions.clear = AsyncMock()
+        self.mock_actions.save = AsyncMock()
         self.mock_actions.post_user_message = AsyncMock()
 
     def compose(self) -> ComposeResult:
@@ -113,3 +114,20 @@ class TestUserInputSlashMenu:
             await pilot.press("enter")
 
             app.mock_actions.new.assert_called_once()
+
+    async def test_clears_input_after_filtering_and_selecting(self, app):
+        async with app.run_test() as pilot:
+            user_input = app.query_one(UserInput)
+            text_area = user_input.query_one(TextArea)
+
+            await pilot.press("/")
+            await pilot.press("s")
+            await pilot.press("a")
+            await pilot.press("v")
+
+            assert text_area.text == "sav"
+
+            await pilot.press("enter")
+
+            assert text_area.text == ""
+            app.mock_actions.save.assert_called_once()

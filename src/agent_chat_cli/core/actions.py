@@ -2,8 +2,10 @@ from typing import TYPE_CHECKING
 
 from agent_chat_cli.utils.enums import ControlCommand
 from agent_chat_cli.components.messages import RoleType
+from agent_chat_cli.components.chat_history import ChatHistory
 from agent_chat_cli.components.tool_permission_prompt import ToolPermissionPrompt
 from agent_chat_cli.utils.logger import log_json
+from agent_chat_cli.utils.save_conversation import save_conversation
 
 if TYPE_CHECKING:
     from agent_chat_cli.app import AgentChatCLIApp
@@ -20,8 +22,8 @@ class Actions:
         await self.app.renderer.add_message(RoleType.USER, message)
         await self._query(message)
 
-    async def post_system_message(self, message: str) -> None:
-        await self.app.renderer.add_message(RoleType.SYSTEM, message)
+    async def post_system_message(self, message: str, thinking: bool = True) -> None:
+        await self.app.renderer.add_message(RoleType.SYSTEM, message, thinking=thinking)
 
     async def post_app_event(self, event) -> None:
         await self.app.renderer.handle_app_event(event)
@@ -62,6 +64,13 @@ class Actions:
                 await self._query("The user has denied the tool")
             else:
                 await self.post_user_message(response)
+
+    async def save(self) -> None:
+        chat_history = self.app.query_one(ChatHistory)
+        file_path = save_conversation(chat_history)
+        await self.post_system_message(
+            f"Conversation saved to {file_path}", thinking=False
+        )
 
     async def _query(self, user_input: str) -> None:
         await self.app.agent_loop.query_queue.put(user_input)

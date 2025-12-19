@@ -56,7 +56,9 @@ class Renderer:
         if event.type is not AppEventType.RESULT:
             await self.app.ui_state.scroll_to_bottom()
 
-    async def add_message(self, type: RoleType, content: str) -> None:
+    async def add_message(
+        self, type: RoleType, content: str, thinking: bool = True
+    ) -> None:
         match type:
             case RoleType.USER:
                 message = Message.user(content)
@@ -70,7 +72,8 @@ class Renderer:
         chat_history = self.app.query_one(ChatHistory)
         chat_history.add_message(message)
 
-        self.app.ui_state.start_thinking()
+        if thinking:
+            self.app.ui_state.start_thinking()
         await self.app.ui_state.scroll_to_bottom()
 
     async def reset_chat_history(self) -> None:
