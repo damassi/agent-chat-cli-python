@@ -125,6 +125,23 @@ SlashCommandMenu OptionList {
     background: transparent;
 }
 
+ModelSelectionMenu {
+    height: auto;
+    max-height: 10;
+    display: none;
+}
+
+ModelSelectionMenu.visible {
+    display: block;
+}
+
+ModelSelectionMenu OptionList {
+    height: auto;
+    max-height: 10;
+    border: solid $primary;
+    background: transparent;
+}
+
 
 .dim {
     color: #888;

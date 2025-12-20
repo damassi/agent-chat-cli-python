@@ -7,6 +7,7 @@ from textual.events import DescendantBlur
 from agent_chat_cli.components.caret import Caret
 from agent_chat_cli.components.flex import Flex
 from agent_chat_cli.components.slash_command_menu import SlashCommandMenu
+from agent_chat_cli.components.model_selection_menu import ModelSelectionMenu
 from agent_chat_cli.core.actions import Actions
 from agent_chat_cli.utils.enums import Key
 
@@ -35,6 +36,7 @@ class UserInput(Widget):
         yield SlashCommandMenu(
             actions=self.actions, on_filter_change=self._on_filter_change
         )
+        yield ModelSelectionMenu(actions=self.actions)
 
     def _on_filter_change(self, char: str) -> None:
         text_area = self.query_one(TextArea)
@@ -51,13 +53,15 @@ class UserInput(Widget):
         if not self.display:
             return
 
-        menu = self.query_one(SlashCommandMenu)
+        menu = self._get_visible_menu()
 
-        if isinstance(event.widget, TextArea) and not menu.is_visible:
+        if isinstance(event.widget, TextArea) and not menu:
             event.widget.focus(scroll_visible=False)
-        elif isinstance(event.widget, OptionList) and menu.is_visible:
-            menu.hide()
-            self.query_one(TextArea).focus(scroll_visible=False)
+        elif isinstance(event.widget, OptionList) and menu:
+            menu_option_list = menu.query_one(OptionList)
+            if event.widget == menu_option_list:
+                menu.hide()
+                self.query_one(TextArea).focus(scroll_visible=False)
 
     def on_text_area_changed(self, event: TextArea.Changed) -> None:
         menu = self.query_one(SlashCommandMenu)
@@ -68,10 +72,10 @@ class UserInput(Widget):
             menu.show()
 
     async def on_key(self, event) -> None:
-        menu = self.query_one(SlashCommandMenu)
+        menu = self._get_visible_menu()
 
-        if menu.is_visible:
-            self._close_menu(event)
+        if menu:
+            self._close_menu(event, menu)
             return
 
         if event.key == "up":
@@ -92,9 +96,7 @@ class UserInput(Widget):
         input_widget = self.query_one(TextArea)
         input_widget.insert("\n")
 
-    def _close_menu(self, event) -> None:
-        menu = self.query_one(SlashCommandMenu)
-
+    def _close_menu(self, event, menu: SlashCommandMenu | ModelSelectionMenu) -> None:
         if event.key == Key.ESCAPE.value:
             event.stop()
             event.prevent_default()
@@ -104,7 +106,10 @@ class UserInput(Widget):
             input_widget.focus()
             return
 
-        if event.key in (Key.BACKSPACE.value, Key.DELETE.value):
+        if isinstance(menu, SlashCommandMenu) and event.key in (
+            Key.BACKSPACE.value,
+            Key.DELETE.value,
+        ):
             if menu.filter_text:
                 menu.filter_text = menu.filter_text[:-1]
                 menu._refresh_options()
@@ -147,10 +152,21 @@ class UserInput(Widget):
         input_widget.text = self.message_history[self.history_index]
         input_widget.move_cursor_relative(rows=999, columns=999)
 
-    async def action_submit(self) -> None:
-        menu = self.query_one(SlashCommandMenu)
+    def _get_visible_menu(self) -> SlashCommandMenu | ModelSelectionMenu | None:
+        slash_menu = self.query_one(SlashCommandMenu)
+        if slash_menu.is_visible:
+            return slash_menu
 
-        if menu.is_visible:
+        model_menu = self.query_one(ModelSelectionMenu)
+        if model_menu.is_visible:
+            return model_menu
+
+        return None
+
+    async def action_submit(self) -> None:
+        menu = self._get_visible_menu()
+
+        if menu:
             option_list = menu.query_one(OptionList)
             option_list.action_select()
             input_widget = self.query_one(TextArea)

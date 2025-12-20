@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import NamedTuple
 
 
 class AppEventType(Enum):
@@ -20,8 +21,14 @@ class ContentType(Enum):
 
 class ControlCommand(Enum):
     NEW_CONVERSATION = "new_conversation"
+    CHANGE_MODEL = "change_model"
     EXIT = "exit"
     CLEAR = "clear"
+
+
+class ModelChangeCommand(NamedTuple):
+    command: ControlCommand
+    model: str
 
 
 class Key(Enum):
