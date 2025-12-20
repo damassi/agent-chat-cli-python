@@ -23,24 +23,6 @@ class Message:
     content: str
     metadata: dict[str, Any] | None = None
 
-    @classmethod
-    def system(cls, content: str) -> "Message":
-        return cls(type=RoleType.SYSTEM, content=content)
-
-    @classmethod
-    def user(cls, content: str) -> "Message":
-        return cls(type=RoleType.USER, content=content)
-
-    @classmethod
-    def agent(cls, content: str) -> "Message":
-        return cls(type=RoleType.AGENT, content=content)
-
-    @classmethod
-    def tool(cls, tool_name: str, content: str) -> "Message":
-        return cls(
-            type=RoleType.TOOL, content=content, metadata={"tool_name": tool_name}
-        )
-
 
 class SystemMessage(Widget):
     message: str = ""

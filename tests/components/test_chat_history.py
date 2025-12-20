@@ -4,6 +4,7 @@ from textual.app import App, ComposeResult
 from agent_chat_cli.components.chat_history import ChatHistory
 from agent_chat_cli.components.messages import (
     Message,
+    RoleType,
     SystemMessage,
     UserMessage,
     AgentMessage,
@@ -24,7 +25,9 @@ class TestChatHistoryAddMessage:
     async def test_adds_system_message(self, app):
         async with app.run_test():
             chat_history = app.query_one(ChatHistory)
-            chat_history.add_message(Message.system("System alert"))
+            chat_history.add_message(
+                Message(type=RoleType.SYSTEM, content="System alert")
+            )
 
             widgets = chat_history.query(SystemMessage)
             assert len(widgets) == 1
@@ -33,7 +36,7 @@ class TestChatHistoryAddMessage:
     async def test_adds_user_message(self, app):
         async with app.run_test():
             chat_history = app.query_one(ChatHistory)
-            chat_history.add_message(Message.user("Hello"))
+            chat_history.add_message(Message(type=RoleType.USER, content="Hello"))
 
             widgets = chat_history.query(UserMessage)
             assert len(widgets) == 1
@@ -42,7 +45,7 @@ class TestChatHistoryAddMessage:
     async def test_adds_agent_message(self, app):
         async with app.run_test():
             chat_history = app.query_one(ChatHistory)
-            chat_history.add_message(Message.agent("I can help"))
+            chat_history.add_message(Message(type=RoleType.AGENT, content="I can help"))
 
             widgets = chat_history.query(AgentMessage)
             assert len(widgets) == 1
@@ -52,7 +55,11 @@ class TestChatHistoryAddMessage:
         async with app.run_test():
             chat_history = app.query_one(ChatHistory)
             chat_history.add_message(
-                Message.tool("read_file", '{"path": "/tmp/test.txt"}')
+                Message(
+                    type=RoleType.TOOL,
+                    content='{"path": "/tmp/test.txt"}',
+                    metadata={"tool_name": "read_file"},
+                )
             )
 
             widgets = chat_history.query(ToolMessage)
@@ -63,7 +70,13 @@ class TestChatHistoryAddMessage:
     async def test_tool_message_handles_invalid_json(self, app):
         async with app.run_test():
             chat_history = app.query_one(ChatHistory)
-            chat_history.add_message(Message.tool("bash", "not valid json"))
+            chat_history.add_message(
+                Message(
+                    type=RoleType.TOOL,
+                    content="not valid json",
+                    metadata={"tool_name": "bash"},
+                )
+            )
 
             widgets = chat_history.query(ToolMessage)
             assert len(widgets) == 1
@@ -72,8 +85,8 @@ class TestChatHistoryAddMessage:
     async def test_adds_multiple_messages(self, app):
         async with app.run_test():
             chat_history = app.query_one(ChatHistory)
-            chat_history.add_message(Message.user("First"))
-            chat_history.add_message(Message.agent("Second"))
-            chat_history.add_message(Message.user("Third"))
+            chat_history.add_message(Message(type=RoleType.USER, content="First"))
+            chat_history.add_message(Message(type=RoleType.AGENT, content="Second"))
+            chat_history.add_message(Message(type=RoleType.USER, content="Third"))
 
             assert len(chat_history.children) == 3
