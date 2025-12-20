@@ -24,7 +24,12 @@ from agent_chat_cli.utils.config import (
     get_available_servers,
     get_sdk_config,
 )
-from agent_chat_cli.utils.enums import AppEventType, ContentType, ControlCommand
+from agent_chat_cli.utils.enums import (
+    AppEventType,
+    ContentType,
+    ControlCommand,
+    ModelChangeCommand,
+)
 from agent_chat_cli.utils.logger import log_json
 from agent_chat_cli.utils.mcp_server_status import MCPServerStatus
 
@@ -51,36 +56,33 @@ class AgentLoop:
 
         self.client: ClaudeSDKClient
 
-        self.query_queue: asyncio.Queue[str | ControlCommand] = asyncio.Queue()
+        self.query_queue: asyncio.Queue[str | ControlCommand | ModelChangeCommand] = (
+            asyncio.Queue()
+        )
         self.permission_response_queue: asyncio.Queue[str] = asyncio.Queue()
         self.permission_lock = asyncio.Lock()
 
         self._running = False
 
     async def start(self) -> None:
-        mcp_servers = {
-            name: config.model_dump() for name, config in self.available_servers.items()
-        }
-
-        await self._initialize_client(mcp_servers=mcp_servers)
+        await self._initialize_client()
 
         self._running = True
 
         while self._running:
             user_input = await self.query_queue.get()
 
+            if isinstance(user_input, ModelChangeCommand):
+                self.config.model = user_input.model
+                await self.client.disconnect()
+                await self._initialize_client()
+                continue
+
             if isinstance(user_input, ControlCommand):
                 if user_input == ControlCommand.NEW_CONVERSATION:
                     await self.client.disconnect()
-
                     self.session_id = None
-
-                    mcp_servers = {
-                        name: config.model_dump()
-                        for name, config in self.available_servers.items()
-                    }
-
-                    await self._initialize_client(mcp_servers=mcp_servers)
+                    await self._initialize_client()
                 continue
 
             self.app.ui_state.set_interrupting(False)
@@ -97,7 +99,17 @@ class AgentLoop:
                 AppEvent(type=AppEventType.RESULT, data=None)
             )
 
-    async def _initialize_client(self, mcp_servers: dict) -> None:
+    async def change_model(self, model: str) -> None:
+        await self.query_queue.put(
+            ModelChangeCommand(ControlCommand.CHANGE_MODEL, model)
+        )
+
+    async def _initialize_client(self, mcp_servers: dict | None = None) -> None:
+        if mcp_servers is None:
+            mcp_servers = {
+                name: config.model_dump()
+                for name, config in self.available_servers.items()
+            }
         sdk_config = get_sdk_config(self.config)
 
         sdk_config["mcp_servers"] = mcp_servers

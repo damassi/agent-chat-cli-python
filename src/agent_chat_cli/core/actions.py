@@ -4,6 +4,7 @@ from agent_chat_cli.utils.enums import ControlCommand
 from agent_chat_cli.components.messages import RoleType
 from agent_chat_cli.components.chat_history import ChatHistory
 from agent_chat_cli.components.tool_permission_prompt import ToolPermissionPrompt
+from agent_chat_cli.components.model_selection_menu import ModelSelectionMenu
 from agent_chat_cli.utils.logger import log_json
 from agent_chat_cli.utils.save_conversation import save_conversation
 
@@ -71,6 +72,14 @@ class Actions:
         await self.post_system_message(
             f"Conversation saved to {file_path}", thinking=False
         )
+
+    def show_model_menu(self) -> None:
+        model_menu = self.app.query_one(ModelSelectionMenu)
+        model_menu.show()
+
+    async def change_model(self, model: str) -> None:
+        await self.app.agent_loop.change_model(model)
+        await self.post_system_message(f"Switched to {model}", thinking=False)
 
     async def _query(self, user_input: str) -> None:
         await self.app.agent_loop.query_queue.put(user_input)

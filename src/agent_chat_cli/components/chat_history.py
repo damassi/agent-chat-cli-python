@@ -13,8 +13,8 @@ from agent_chat_cli.components.messages import (
 
 class ChatHistory(Container):
     def add_message(self, message: Message) -> None:
-        widget = self._create_message(message)
-        self.mount(widget)
+        message_item = self._create_message(message)
+        self.mount(message_item)
 
     def _create_message(
         self, message: Message

@@ -108,17 +108,17 @@ TextArea .text-area--cursor {
     padding-left: 2;
 }
 
-SlashCommandMenu {
+SlashCommandMenu, ModelSelectionMenu {
     height: auto;
     max-height: 10;
     display: none;
 }
 
-SlashCommandMenu.visible {
+SlashCommandMenu.visible, ModelSelectionMenu.visible {
     display: block;
 }
 
-SlashCommandMenu OptionList {
+SlashCommandMenu OptionList, ModelSelectionMenu OptionList {
     height: auto;
     max-height: 10;
     border: solid $primary;

@@ -11,6 +11,7 @@ from agent_chat_cli.core.actions import Actions
 COMMANDS = [
     {"id": "new", "label": "/new   - Start new conversation"},
     {"id": "clear", "label": "/clear - Clear chat history"},
+    {"id": "model", "label": "/model - Change model"},
     {"id": "save", "label": "/save  - Save conversation to markdown"},
     {"id": "exit", "label": "/exit  - Exit"},
 ]
@@ -84,5 +85,7 @@ class SlashCommandMenu(Widget):
                 await self.actions.clear()
             case "new":
                 await self.actions.new()
+            case "model":
+                self.actions.show_model_menu()
             case "save":
                 await self.actions.save()
