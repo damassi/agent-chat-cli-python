@@ -10,9 +10,9 @@ if TYPE_CHECKING:
     from agent_chat_cli.core.actions import Actions
 
 MODELS = [
-    {"id": "opus", "label": "Opus"},
     {"id": "sonnet", "label": "Sonnet"},
     {"id": "haiku", "label": "Haiku"},
+    {"id": "opus", "label": "Opus"},
 ]
 
 

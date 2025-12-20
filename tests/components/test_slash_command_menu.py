@@ -15,6 +15,7 @@ class SlashCommandMenuApp(App):
         self.mock_actions.clear = AsyncMock()
         self.mock_actions.new = AsyncMock()
         self.mock_actions.save = AsyncMock()
+        self.mock_actions.show_model_menu = MagicMock()
 
     def compose(self) -> ComposeResult:
         yield SlashCommandMenu(actions=self.mock_actions)
@@ -79,11 +80,23 @@ class TestSlashCommandMenuSelection:
 
             app.mock_actions.clear.assert_called_once()
 
+    async def test_model_command_calls_show_model_menu(self, app):
+        async with app.run_test() as pilot:
+            menu = app.query_one(SlashCommandMenu)
+            menu.show()
+
+            await pilot.press("down")
+            await pilot.press("down")
+            await pilot.press("enter")
+
+            app.mock_actions.show_model_menu.assert_called_once()
+
     async def test_exit_command_calls_quit(self, app):
         async with app.run_test() as pilot:
             menu = app.query_one(SlashCommandMenu)
             menu.show()
 
+            await pilot.press("down")
             await pilot.press("down")
             await pilot.press("down")
             await pilot.press("down")
