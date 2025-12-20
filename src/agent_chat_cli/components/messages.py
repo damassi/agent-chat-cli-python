@@ -55,7 +55,7 @@ class UserMessage(Widget):
 
     def compose(self) -> ComposeResult:
         yield Label("[bold][#a3c1ad]You:[/][/bold]")
-        yield Label(self.message)
+        yield Markdown(self.message)
 
 
 class AgentMessage(Widget):
