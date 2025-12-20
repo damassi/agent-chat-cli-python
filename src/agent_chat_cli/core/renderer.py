@@ -61,11 +61,11 @@ class Renderer:
     ) -> None:
         match type:
             case RoleType.USER:
-                message = Message.user(content)
+                message = Message(type=RoleType.USER, content=content)
             case RoleType.SYSTEM:
-                message = Message.system(content)
+                message = Message(type=RoleType.SYSTEM, content=content)
             case RoleType.AGENT:
-                message = Message.agent(content)
+                message = Message(type=RoleType.AGENT, content=content)
             case _:
                 raise ValueError(f"Unsupported message type: {type}")
 
