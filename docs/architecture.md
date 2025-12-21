@@ -20,6 +20,7 @@ src/agent_chat_cli/
 │   ├── flex.py                # Horizontal flex container
 │   ├── header.py              # App header with MCP server status
 │   ├── messages.py            # Message data models and widgets
+│   ├── model_selection_menu.py # Model selection menu
 │   ├── slash_command_menu.py  # Slash command menu with filtering
 │   ├── spacer.py              # Empty spacer widget
 │   ├── thinking_indicator.py  # "Agent is thinking" indicator
@@ -61,6 +62,7 @@ The application follows a loosely coupled architecture with four main orchestrat
 Centralized management of UI state behaviors. Handles:
 - Thinking indicator visibility and cursor blink state
 - Tool permission prompt display/hide
+- Model selection menu visibility
 - Interrupt state tracking
 
 This class was introduced in PR #9 to consolidate scattered UI state logic from Actions and Renderer into a single cohesive module.
@@ -79,6 +81,8 @@ User-initiated action handlers:
 - `interrupt()`: Cancels current agent operation
 - `new()`: Starts new conversation, clears history
 - `respond_to_tool_permission()`: Handles permission prompt responses
+- `show_model_menu()`: Displays model selection menu
+- `change_model()`: Switches active Claude model
 
 **AgentLoop** (`core/agent_loop.py`)
 Manages the Claude Agent SDK client lifecycle:
@@ -108,9 +112,15 @@ Text input with:
 **SlashCommandMenu** (`components/slash_command_menu.py`)
 Command menu triggered by `/`:
 - Fuzzy filtering as you type (text shows in input)
-- Commands: `/new`, `/clear`, `/save`, `/exit`
+- Commands: `/new`, `/clear`, `/model`, `/save`, `/exit`
 - Backspace removes filter chars; closes menu when empty
 - Escape closes and clears
+
+**ModelSelectionMenu** (`components/model_selection_menu.py`)
+Model selection menu triggered by `/model`:
+- Choose between Sonnet, Haiku, and Opus models
+- Switches the active model for the current conversation
+- Enter to select, Escape to cancel
 
 ### Message History Navigation
 

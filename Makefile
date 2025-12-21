@@ -1,7 +1,10 @@
-.PHONY: dev console lint install start test type-check
+.PHONY: agent console dev lint install start test type-check
 
 install:
 	uv sync && uv run pre-commit install && cp .env.example .env && echo "Please edit the .env file with your API keys."
+
+agent:
+	uv run chat
 
 console:
 	uv run textual console -x SYSTEM -x EVENT -x DEBUG -x INFO

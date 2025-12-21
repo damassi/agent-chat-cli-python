@@ -26,7 +26,8 @@ make install
 Update the `.env` with your `ANTHROPIC_API_KEY` and then run:
 
 ```bash
-make start
+# Start the agent
+make agent
 
 # Alternatively, if in dev (see below)
 make dev
