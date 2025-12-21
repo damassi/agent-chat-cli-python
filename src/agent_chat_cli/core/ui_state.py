@@ -7,6 +7,7 @@ from textual.widgets import TextArea
 from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
 from agent_chat_cli.components.tool_permission_prompt import ToolPermissionPrompt
 from agent_chat_cli.components.user_input import UserInput
+from agent_chat_cli.components.model_selection_menu import ModelSelectionMenu
 
 if TYPE_CHECKING:
     from agent_chat_cli.app import AgentChatCLIApp
@@ -76,3 +77,7 @@ class UIState:
         await asyncio.sleep(0.1)
         container = self.app.query_one(VerticalScroll)
         container.scroll_end(animate=False, immediate=True)
+
+    def show_model_menu(self) -> None:
+        model_menu = self.app.query_one(ModelSelectionMenu)
+        model_menu.show()

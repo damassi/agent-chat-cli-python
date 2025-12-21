@@ -7,6 +7,7 @@ from agent_chat_cli.app import AgentChatCLIApp
 from agent_chat_cli.components.thinking_indicator import ThinkingIndicator
 from agent_chat_cli.components.tool_permission_prompt import ToolPermissionPrompt
 from agent_chat_cli.components.user_input import UserInput
+from agent_chat_cli.components.model_selection_menu import ModelSelectionMenu
 
 
 @pytest.fixture
@@ -163,3 +164,13 @@ class TestUIStateInput:
             app.ui_state.clear_input()
 
             assert text_area.text == ""
+
+
+class TestUIStateModelMenu:
+    async def test_show_model_menu_makes_visible(self, mock_agent_loop, mock_config):
+        app = AgentChatCLIApp()
+        async with app.run_test():
+            app.ui_state.show_model_menu()
+
+            model_menu = app.query_one(ModelSelectionMenu)
+            assert model_menu.is_visible is True

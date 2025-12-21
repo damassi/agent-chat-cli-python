@@ -254,3 +254,15 @@ class TestActionsSave:
 
             thinking_indicator = app.query_one(ThinkingIndicator)
             assert thinking_indicator.is_thinking is False
+
+
+class TestActionsShowModelMenu:
+    async def test_delegates_to_ui_state(self, mock_agent_loop, mock_config):
+        from agent_chat_cli.components.model_selection_menu import ModelSelectionMenu
+
+        app = AgentChatCLIApp()
+        async with app.run_test():
+            app.actions.show_model_menu()
+
+            model_menu = app.query_one(ModelSelectionMenu)
+            assert model_menu.is_visible is True
