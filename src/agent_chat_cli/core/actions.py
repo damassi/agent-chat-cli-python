@@ -10,6 +10,8 @@ from agent_chat_cli.utils.save_conversation import save_conversation
 if TYPE_CHECKING:
     from agent_chat_cli.app import AgentChatCLIApp
 
+print("hii")
+
 
 class Actions:
     def __init__(self, app: "AgentChatCLIApp") -> None:
