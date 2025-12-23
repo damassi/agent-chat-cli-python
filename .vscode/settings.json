@@ -11,6 +11,8 @@
   "ruff.enable": true,
   "ruff.lint.enable": true,
   "python.languageServer": "None",
+  "basedpyright.disableOrganizeImports": true,
+  "basedpyright.analysis.typeCheckingMode": "standard",
 
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff",
